@@ -1,0 +1,9 @@
+#message {
+  display: block;
+  margin: auto;
+  padding: 5px;
+  background-color: rgb(251, 251, 181);
+  border-radius: 5px;
+  font-size: 24;
+  max-width: 40%;
+}

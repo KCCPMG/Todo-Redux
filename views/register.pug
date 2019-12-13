@@ -1,0 +1,22 @@
+head
+  style
+    include ../stylesheets/basic.css
+  include ./partials/message.pug
+
++message(messages)
+
+form(action="/register" method="POST")
+  div
+    label(for="name") Name
+      input(type="text" name="name" autocomplete="name" value="hoobastank") 
+  div
+    label(for="email") E-mail
+      input(type="text" name="email" autocomplete="email" value="connorwales@gmail.com") 
+  div
+    label(for="password") Password
+      input(type="password" name="password" autocomplete="new-password" value="asdf") 
+  div
+    label(for="confirm_password") Confirm Password
+      input(type="password" name="confirm_password" autocomplete="new-password" value="asdf")
+  div
+    input(type="submit")

@@ -1,0 +1,144 @@
+#sheet {
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  display: block;
+  top: 0;
+  opacity: 0.2;
+  background-color: black;
+}
+
+
+#taskBox {
+  display: block;
+  width: 80%;
+  height: 80%;
+  margin: auto;
+  position: fixed;
+  top: 10%;
+  left: 10%;
+  border-radius: 30px;
+  background-color: rgb(99, 232, 236);
+}
+
+#taskBox > .tb-field-container {
+  background-color: white;
+  display: block;
+  width: 90%;
+  margin: auto;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  border-radius: 10px;
+}
+
+textarea, button {
+  font-family: "hk-grotesk";
+}
+
+#taskBox > .tb-field-container > #title {
+  display: block;
+  resize: none;
+  text-align: center;
+  margin: auto;
+  font-size: 28px;
+  border: none;
+  width: calc(100% - 20px);
+  outline: none;
+}
+
+#taskBox > .tb-field-container > #text {
+  display: block;
+  resize: none;
+  text-align: center;
+  margin: auto;
+  font-size: 18px;
+  border: none;
+  width: calc(100% - 20px);
+  outline: none;
+}
+
+#taskBox > .tb-field-container > #tags {
+  display: block;
+  resize: none;
+  text-align: center;
+  margin: auto;
+  font-size: 18px;
+  border: none;
+  width: calc(100% - 20px);
+  outline: none;
+}
+
+#taskBox > .tb-field-container > #assignedTo, .autocomplete {
+  display: block;
+  resize: none;
+  text-align: center;
+  margin: auto;
+  font-size: 18px;
+  border: none;
+  width: calc(100% - 20px);
+  outline: none;
+}
+
+.autocomplete {
+  border-radius: 5px;
+}
+
+.selection-option {
+  border: 1px solid black;
+  display: block;
+}
+
+.selection-option:hover {
+  background-color: rgb(99, 158, 236);
+  cursor: pointer;
+}
+
+.selection-option:first-child {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.selection-option:last-child {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+#taskBox > .tb-field-container > #assignedDue {
+  display: block;
+  resize: none;
+  text-align: center;
+  margin: auto;
+  font-size: 18px;
+  border: none;
+  width: calc(100% - 20px);
+  outline: none;
+}
+
+
+#taskBox > #submitButton {
+  margin: auto;
+}
+
+#taskBox > #cancelButton {
+  margin: auto;
+}
+
+.taskbox-button-row {
+  display: flex;
+  justify-content: space-between;
+  margin: auto;
+  width: 90%;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  border-radius: 10px;
+}
+
+.taskbox-button {
+  width: 48%;
+  height: 50px;
+  font-size: 26px;
+  background-color: white;
+  border-color: black;
+  border-width: 2px;
+  border-radius: 5px;
+}

@@ -1,0 +1,25 @@
+
+#test {
+  margin-top: 15vh;
+}
+
+#login {
+  padding: 5px;
+}
+
+#login div {
+  margin: 0.25px;
+}
+
+#login-button {
+  border-radius: 5px;
+  width: 80px;
+  height: 36px;
+  font-size: 16;
+  background-color: rgb(177, 235, 229);
+  padding: 2px;
+}
+
+input {
+  margin: 3px;
+}

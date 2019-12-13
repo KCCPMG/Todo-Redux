@@ -1,0 +1,143 @@
+head
+  style
+    include ../stylesheets/basic.css
+    include ../stylesheets/create-task.css
+    include ../stylesheets/people.css
+  include ./partials/topbar.pug
+  include ./partials/message.pug
+  script(src='./socket.io/socket.io.js')
+  script
+    include ../scripts/jquery.js
+    include ../scripts/createTask.js
+  script.
+    var socket = io();
+    let id = "#{id}";
+    socket.emit('declareId', {userId : "#{id}"});
+    socket.on('message', function(message){
+      console.log(message);
+      // Stub
+    })
+
+    
+
++topbar(name)
++message(messages)
+
+div.people-selector#supes-selector My Supes
+div.people-selector#subs-selector My Subs
+div.people-selector#collab-selector My Collaborators
+div.people-selector#find-selector Find People
+
+div#separation-bar
+
+div#results-area 
+
+script.
+  let supes = [];
+  let subs = [];
+  let collabs = [];
+
+  let supesReady = false;
+  let subsReady = false;
+  let collabsReady = false;
+
+  function getSupesReady() { return supesReady; }
+  function getSubsReady() { return subsReady; }
+  function getCollabsReady() { return collabsReady; }
+
+  function getSupes(){
+    $.ajax({
+      url: '/getSupes',
+      type: 'GET'
+    }).done(function(response){
+      for (let supe of response){
+        supes.push({username: supe.username,
+                    email: supe.email})
+      }
+      supesReady = true;   
+    })
+  }
+
+  function getSubs() {
+    $.ajax({
+      url: '/getSubs',
+      type: 'GET'
+    }).done(function(response){
+      for (sub of response) {
+        subs.push({username: sub.username, 
+                   email: sub.email})
+      }
+      subsReady = true;
+    })
+  }
+
+  function getCollabs() {
+    $.ajax({
+      url: '/getCollabs',
+      type: 'GET'
+    }).done(function(response){
+      for (let collab of response) {
+        collabs.push({
+          username: collab.username,
+          email: collab.email
+        })
+      }
+      collabsReady = true;
+    })
+  }
+
+  function displayPeople(peopleArr, peopleReady) {
+    $("#results-area").empty();
+    console.log(peopleReady());
+    if (peopleReady() == false) {
+      $("#results-area").text("Loading...");
+      setTimeout(function() {
+        displayPeople(peopleArr, peopleReady)
+      }, 500);
+    } else if (peopleArr.length == 0) {
+      $("#results-area").text("No Results");
+    } else {
+      for (let person of peopleArr) {
+        let el = $('<div/>', {
+          "class" : "person-result",
+        });
+        el.text(person.username + " " + person.email);
+        $("#results-area").append(el);
+      }
+    }
+
+  }
+
+  
+
+  $(document).ready(function(){
+    let displayed = "";
+    getSupes();
+    getSubs();
+    getCollabs();
+  
+    $('#supes-selector').click(function(){
+      if (displayed == "supes") return;
+      displayed = "supes";
+      displayPeople(supes, getSupesReady);
+    })
+
+    $('#subs-selector').click(function(){
+      if (displayed == "subs") return;
+      displayed = "subs";
+      displayPeople(subs, getSubsReady);
+    })
+
+    $('#collab-selector').click(function(){
+      if (displayed == "collabs") return;
+      displayed = "collabs";
+      displayPeople(collabs, getCollabsReady);
+    })
+
+    $('#find-selector').click(function(){
+      if (displayed == "find") return;
+      $("#results-area").empty();
+      displayed = "find";
+      // Stub
+    })
+  })

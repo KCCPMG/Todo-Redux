@@ -1,0 +1,11 @@
+mixin message(messages) 
+  div(id="message")
+    if messages == undefined
+      - messages = []
+    if messages.length > 0
+      style
+        include ../../stylesheets/message.css
+      each message in messages
+        | #{message}
+        br
+  

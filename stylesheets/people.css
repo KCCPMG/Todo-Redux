@@ -1,0 +1,17 @@
+.people-selector {
+  display: inline-block;
+  font-size: 32;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgb(3, 145, 180);
+  margin-top: 8vh;
+  margin-left: 2.5vw;
+  margin-right: 2.5vw;
+}
+
+#separation-bar {
+  height: 10px;
+  width: 100%;
+  background-color: rgb(3, 145, 180);
+  margin-top: 25px;
+}

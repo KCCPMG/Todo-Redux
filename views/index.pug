@@ -1,0 +1,38 @@
+head
+  style
+    include ../stylesheets/basic.css
+    include ../stylesheets/login-style.css
+  include ./partials/message.pug
+  
+    
+
++message(messages)
+
+h1(id="test") Todo
+br
+form(id="login" action="/users/login" method="POST")
+  div
+    label(for="email") E-mail Address
+      input(type="text" name="username" value="connorwales@gmail.com" required)
+  br
+  div
+    label(for="password") Password
+      input(type="password" name="password" value="asdf" required)
+  br 
+  div
+    input(id="login-button" value="login" type="submit")
+p Want to take a look at how it works? Give us a 
+  a(href="/tutorial") click
+p Ready to sign up? 
+  a(href="/register") Click here!
+
+
+script
+    include ../scripts/jquery.js
+script.
+  $(document).ready(function(){
+    if (typeof link=='undefined') {
+      var link="";
+    } else link = "/" + link;
+    $('#login').attr("action", "/users/login/" + "#{link}");
+  });

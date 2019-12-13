@@ -1,0 +1,10 @@
+mixin topbar(name)
+  style
+    include ../../stylesheets/topbar.css
+  div(id="topbar")
+    div.welcome Welcome, #{name}!
+    div(id="settings-logout-links")
+      a.teammates-link.topbar-link(href="/users/teammates") Teammates
+      a.notifications-link.topbar-link(href="/users/notifications") Notifications
+      a.settings-link.topbar-link(href="/users/settings") Settings
+      a.logout-link.topbar-link(href="/users/logout") Logout

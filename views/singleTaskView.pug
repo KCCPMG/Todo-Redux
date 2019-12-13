@@ -1,0 +1,42 @@
+head
+  style
+    include ../stylesheets/basic.css
+    include ../stylesheets/task.css
+  include ./partials/topbar.pug
+  include ./partials/message.pug
+  script(src='../socket.io/socket.io.js')
+  script
+    include ../scripts/jquery.js
+  script.
+    var tasks = !{JSON.stringify(tasks)};
+    var task = tasks[0];
+    var known_associates = !{JSON.stringify(known_associates)}
+
+  script
+    include ../scripts/taskHandler.js
+
+  script.
+
+    var socket = io();
+    let id = "#{id}";
+    socket.emit('declareId', {userId : "#{id}"});
+
+    socket.on('message', function(message){
+      console.log(message);
+      // Stub
+    });
+    socket.on('task-edit', function(task){
+      getTaskEl(task._id).replaceWith(renderTask(task, known_associates));
+      tasks.splice(tasks.indexOf(tasks.find((el) => el._id == task._id)), 0, task);
+    });
+
+    $('document').ready(function() {
+      for (let task of tasks) {
+        $('body').append(renderTask(task, known_associates))
+      }
+    });
+    
+
+body    
+  +topbar(name)
+  +message(messages)
