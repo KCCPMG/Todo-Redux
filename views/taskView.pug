@@ -9,7 +9,6 @@ head
   script(src='./socket.io/socket.io.js')
   script
     include ../scripts/jquery.js
-  script
     include ../scripts/taskHandler.js
     include ../scripts/createTask.js
   script.
@@ -38,16 +37,12 @@ head
     }
 
     $('document').ready(function(){
-      console.log(tasks);
       $('#rtf-container').append(renderTaskFilter(tasks, tags, filtered_tasks));
-      //- $('#task-view').append(renderTasks(tasks, tags));
-      //- filterTasks();
-      updateKnownAssociates();
     })
 
 body    
 
-  +topbar(name)
+  +topbar(name, unreadNotifications)
   +message(messages)
   #rtf-container
   .separation-bar

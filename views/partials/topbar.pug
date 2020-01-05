@@ -1,10 +1,22 @@
-mixin topbar(name)
+mixin topbar(name, unreadNotifications)
   style
     include ../../stylesheets/topbar.css
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
   div(id="topbar")
     div.welcome Welcome, #{name}!
     div(id="settings-logout-links")
-      a.teammates-link.topbar-link(href="/users/teammates") Teammates
-      a.notifications-link.topbar-link(href="/users/notifications") Notifications
-      a.settings-link.topbar-link(href="/users/settings") Settings
-      a.logout-link.topbar-link(href="/users/logout") Logout
+      a.teammates-link.topbar-link(href="/dashboard")
+        i.fa.fa-home
+      a.notifications-link.topbar-link#notification-icon(
+        href="/notifications"
+        style={color : unreadNotifications ? 'purple' : 'white'}
+      )
+        i.fa.fa-bell-o   
+      a.teammates-link.topbar-link(href="/people")
+        i.fa.fa-group
+      a.settings-link.topbar-link(href="/settings")
+        i.fa.fa-cog
+      a.logout-link.topbar-link(href="/users/logout")
+        i.fa.fa-sign-out
+
+

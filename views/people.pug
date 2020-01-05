@@ -3,30 +3,38 @@ head
     include ../stylesheets/basic.css
     include ../stylesheets/create-task.css
     include ../stylesheets/people.css
+    include ../stylesheets/display-person.css
   include ./partials/topbar.pug
   include ./partials/message.pug
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+
   script(src='./socket.io/socket.io.js')
   script
     include ../scripts/jquery.js
     include ../scripts/createTask.js
+    include ../scripts/displayPerson.js
   script.
     var socket = io();
-    let id = "#{id}";
+    let self_id = "#{id}";
     socket.emit('declareId', {userId : "#{id}"});
     socket.on('message', function(message){
       console.log(message);
       // Stub
     })
-
+    
     
 
-+topbar(name)
++topbar(name, unreadNotifications)
 +message(messages)
 
 div.people-selector#supes-selector My Supes
 div.people-selector#subs-selector My Subs
 div.people-selector#collab-selector My Collaborators
 div.people-selector#find-selector Find People
+
+#people-search-bar
+  textarea#people-search-input(rows=1)
+  i.fa.fa-search
 
 div#separation-bar
 
@@ -51,8 +59,9 @@ script.
       type: 'GET'
     }).done(function(response){
       for (let supe of response){
-        supes.push({username: supe.username,
-                    email: supe.email})
+        supes.push({name: supe.username,
+                    email: supe.email,
+                    relationship: "Supe"})
       }
       supesReady = true;   
     })
@@ -64,8 +73,9 @@ script.
       type: 'GET'
     }).done(function(response){
       for (sub of response) {
-        subs.push({username: sub.username, 
-                   email: sub.email})
+        subs.push({name: sub.username, 
+                   email: sub.email,
+                   relationship: "Sub"})
       }
       subsReady = true;
     })
@@ -78,36 +88,30 @@ script.
     }).done(function(response){
       for (let collab of response) {
         collabs.push({
-          username: collab.username,
-          email: collab.email
+          name: collab.username,
+          email: collab.email,
+          relationship: "Collab"
         })
       }
       collabsReady = true;
     })
   }
 
-  function displayPeople(peopleArr, peopleReady) {
+  function displayPeople(peopleArr, peopleReady, self_id, known_associates, socket) {
     $("#results-area").empty();
-    console.log(peopleReady());
     if (peopleReady() == false) {
       $("#results-area").text("Loading...");
       setTimeout(function() {
-        displayPeople(peopleArr, peopleReady)
+        displayPeople(peopleArr, peopleReady, self_id, known_associates, socket)
       }, 500);
     } else if (peopleArr.length == 0) {
       $("#results-area").text("No Results");
     } else {
       for (let person of peopleArr) {
-        let el = $('<div/>', {
-          "class" : "person-result",
-        });
-        el.text(person.username + " " + person.email);
-        $("#results-area").append(el);
+        $('#results-area').append(displayPerson(person, self_id, known_associates, socket))
       }
     }
-
   }
-
   
 
   $(document).ready(function(){
@@ -115,29 +119,61 @@ script.
     getSupes();
     getSubs();
     getCollabs();
+
+    known_associates = !{JSON.stringify(known_associates)}
+
+    $('.people-selector').click(function(e){
+      $('.people-selector-selected').removeClass('people-selector-selected');
+      $(this).addClass('people-selector-selected')
+    })
   
     $('#supes-selector').click(function(){
       if (displayed == "supes") return;
       displayed = "supes";
-      displayPeople(supes, getSupesReady);
+      displayPeople(supes, getSupesReady, self_id, known_associates, socket);
     })
 
     $('#subs-selector').click(function(){
       if (displayed == "subs") return;
       displayed = "subs";
-      displayPeople(subs, getSubsReady);
+      displayPeople(subs, getSubsReady, self_id, known_associates, socket);
     })
 
     $('#collab-selector').click(function(){
       if (displayed == "collabs") return;
       displayed = "collabs";
-      displayPeople(collabs, getCollabsReady);
+      displayPeople(collabs, getCollabsReady, self_id, known_associates, socket);
     })
 
     $('#find-selector').click(function(){
       if (displayed == "find") return;
-      $("#results-area").empty();
       displayed = "find";
-      // Stub
+      showPeopleResults();
+      $('#people-search-input').on('input', function(){
+        showPeopleResults();
+      });
+      
+      function showPeopleResults(){
+        if ($('#people-search-input').val()=="") {
+          $("#results-area").text("Please type to search");
+          return;
+        } else {
+          let url = '/users/search/' + $('#people-search-input').val(); 
+          // Need to sanitize url here
+          
+          $("#results-area").text("Loading...");
+          $.ajax({
+            url,
+            type: 'GET'
+          }).done(function(response) {
+            // people Ready
+            if ($('#people-search-input').val()=="") {
+              $("#results-area").text("Please type to search");
+              return;
+            }
+            displayPeople(response, function(){return true;}, self_id, known_associates, socket);
+          })
+        }
+      }
     })
   })

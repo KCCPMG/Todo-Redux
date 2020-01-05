@@ -4,6 +4,7 @@ const { ensureAuthenticated } = require('../config/auth');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const Task = require('../models/Task');
+const Notification = require('../models/Notification.js');
 const bcrypt = require('bcryptjs');
 const pug = require('pug');
 const dotenv = require('dotenv')
@@ -28,7 +29,8 @@ router.get('/dashboard', ensureAuthenticated, refreshLocals, function(req, res) 
     supes: req.session.supes,
     known_associates: req.session.known_associates,
     tasks_assigned: req.session.tasks_assigned,
-    user_tasks : req.session.user_tasks
+    user_tasks : req.session.user_tasks,
+    unreadNotifications: Boolean(req.user.unreadNotifications)
   });
 });
 
@@ -46,6 +48,7 @@ router.get('/tasks', ensureAuthenticated, refreshLocals, function(req, res){
         supes: req.session.supes,
         tasks: req.session.user_tasks,
         known_associates: req.session.known_associates,
+        unreadNotifications: Boolean(req.user.unreadNotifications)
       });
     }
   })
@@ -65,6 +68,7 @@ router.get('/assigned', ensureAuthenticated, refreshLocals, function(req, res){
         supes: req.session.supes,
         tasks: req.session.tasks_assigned,
         known_associates: req.session.known_associates,
+        unreadNotifications: Boolean(req.user.unreadNotifications)
       });
     }
   })
@@ -80,7 +84,8 @@ router.get('/task', ensureAuthenticated, refreshLocals, function(req, res){
         name: req.user.name,
         messages: req.session.messages,
         id: req.user.id,
-        task: null
+        task: null,
+        unreadNotifications: Boolean(req.user.unreadNotifications)
       });
     } else if (task.assignedBy!=req.user.id && !task.assignedTo.includes(req.user.id)) {
       req.session.messages = ["You do not have access to this task"]
@@ -88,7 +93,8 @@ router.get('/task', ensureAuthenticated, refreshLocals, function(req, res){
         name: req.user.name,
         messages: req.session.messages,
         id: req.user.id,
-        task: null
+        task: null,
+        unreadNotifications: Boolean(req.user.unreadNotifications)
       });
     } else {
       req.session.messages = [];
@@ -97,7 +103,8 @@ router.get('/task', ensureAuthenticated, refreshLocals, function(req, res){
         messages: req.session.messages,
         id: req.user.id,
         tasks: [task],
-        known_associates: req.session.known_associates
+        known_associates: req.session.known_associates,
+        unreadNotifications: Boolean(req.user.unreadNotifications)
       });
     }
   })
@@ -108,7 +115,9 @@ router.get('/people', ensureAuthenticated, refreshLocals, function(req, res){
   res.render('../views/people', {
     name: req.user.name,
     messages: req.session.messages,
+    known_associates: req.session.known_associates,
     id: req.user.id,
+    unreadNotifications: Boolean(req.user.unreadNotifications)
   })
 })
 
@@ -195,6 +204,27 @@ router.get('/getCollabs', ensureAuthenticated, refreshLocals, function(req,res){
   }
 })
 
+router.get('/notifications', ensureAuthenticated, function(req, res){
+
+  Notification.find({$or: [{from:req.user._id}, {to:req.user._id}]}, function(err, data){
+    if (err) res.send(err);
+    else {
+      res.render('../views/notifications', {
+        name: req.user.name,
+        messages: req.session.messages,
+        id: req.user.id,
+        subs: req.session.subs,
+        supes: req.session.supes,
+        known_associates: req.session.known_associates,
+        notifications: data,
+        unreadNotifications: Boolean(req.user.unreadNotifications)
+      })
+    }
+  })
+
+  
+})
+
 router.get('/register', function(req, res) {
   res.render('../views/register');
 });
@@ -225,6 +255,7 @@ router.post('/register',
         newUser.save()
         .then(function(err) {
           let hash_id = bcrypt.hashSync(String(newUser._id), salt);
+          hash_id = hash_id.replace(/\./g, '_').replace(/\//g, '-');
           newUser.confirmLink = hash_id;
           newUser.save();
 

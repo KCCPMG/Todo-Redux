@@ -249,7 +249,6 @@ function getTaskFromEl(el) {
 }
 
 
-
 // Below is under construction
 
 var unknown_associates = [];
@@ -257,7 +256,7 @@ var unknown_associates = [];
 function getEmail(userID){
   let ka = known_associates.find((el) => el.id == userID);
   if (ka==undefined) {
-    unknown_associates.push(userID)
+    if (!unknown_associates.includes(userID)) unknown_associates.push(userID)
     return '...';
   } else return ka.email;
 }
@@ -273,29 +272,36 @@ function getEmails(userIDs) {
 
 
 function updateKnownAssociates(){
+  console.log('update known associates');
+  console.log('known associates going in', known_associates);
+
+  promises = [];
   while (unknown_associates.length>0) {
     let ua = unknown_associates.pop();
-    $.ajax({
+    promises.push($.ajax({
       url: '/users/'+ua,
       method: 'GET'
     }).done(function(data){
       known_associates.push(data);
-      if (unknown_associates.length == 0) {
-        let brokenTaskEls = [];
-        for (taskEl of document.getElementsByClassName('task')) {
-          if ((taskEl.getElementsByClassName("task-assigned-by")[0].textContent).search(/\.\.\./) >-1) {
-            brokenTaskEls.push(taskEl.parentElement);
-          }
-          if ((taskEl.getElementsByClassName("task-assigned-to")[0].textContent).search(/\.\.\./) >-1) {
-            brokenTaskEls.push(taskEl.parentElement);
-          }
-        }
-        for (taskEl of brokenTaskEls) {
-          $(taskEl).replaceWith(renderTask(getTaskFromEl(taskEl)));
-        }
-      }
-    })
+    }))
   }
+
+  Promise.all(promises).then(function(){
+    let brokenTaskEls = [];
+    for (taskEl of document.getElementsByClassName('task')) {
+      if ((taskEl.getElementsByClassName("task-assigned-by")[0].textContent).search(/\.\.\./) >-1) {
+        brokenTaskEls.push(taskEl.parentElement);
+      }
+      if ((taskEl.getElementsByClassName("task-assigned-to")[0].textContent).search(/\.\.\./) >-1) {
+        brokenTaskEls.push(taskEl.parentElement);
+      }
+    }
+    console.log('Broken Tasks', brokenTaskEls);
+    for (taskEl of brokenTaskEls) {
+      $(taskEl).replaceWith(renderTask(getTaskFromEl(taskEl)));
+    }
+    console.log('known_associates after promise resolution', known_associates);
+  })
 }
 
 function updateTags() {
@@ -418,9 +424,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
     filterTasks();
   })
 
-
   filterOptions.append(((completedFilter.append((completedFilterLabel.append(completedFilterInput))))))
-
 
   let assignedDateFilter= $('<div/>', {
     class: 'task-filter'
@@ -482,8 +486,6 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
 
   filterOptions.append(((hasSubtasksFilter.append((hasSubtasksFilterLabel.append(hasSubtasksFilterInput))))))
 
-
-
   let includeSubtasksFilter= $('<div/>', {
     class: 'task-filter'
   })
@@ -508,9 +510,6 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
   })
 
   filterOptions.append(((includeSubtasksFilter.append((includeSubtasksFilterLabel.append(includeSubtasksFilterInput))))))
-
-
-
 
   function showFilter(){
     filterOptions.show();
@@ -676,22 +675,3 @@ function renderTasks(tasks, tags) {
 }
 
 
-// function renderTasks(tasks, tags) {
-//   console.log(tasks);
-//   let renderedTasks = [];
-//   for (let task of tasks) {
-//     // Populate available tags
-//     for (let tag of task.tags) {
-//       if (!tags.includes(tag)) tags.push(tag);
-//     }
-//     let parentInTasks = false;
-//     if (tasks.find((t)=>t._id == task.parentTask) != undefined) {
-//       parentInTasks=true;
-//     }
-//     if (!task.parentTask || parentInTasks==false) {
-//       renderedTasks.push(renderTask(task))
-//     }
-//   }
-//   if (renderedTasks == []) return "No Tasks to Display";
-//   return renderedTasks;
-// }

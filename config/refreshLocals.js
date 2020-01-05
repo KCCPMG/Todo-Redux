@@ -62,12 +62,15 @@ module.exports = function(req, res, next) {
     req.session.known_associates = [{
       id: req.user.id,
       name: req.user.name,
-      email: req.user.email
+      email: req.user.email,
+      relationship: "Self"
     }]
     sub_output.forEach(function(sub) {
       if (!Boolean(req.session.known_associates.find(function(el){
         return el.id == sub.id
       }))) {
+        if (supe_output.find((el) => el.email==sub.email)) sub.relationship = "Collab";
+        else sub.relationship = "Sub";
         req.session.known_associates.push(sub);
       }
     })
@@ -75,6 +78,7 @@ module.exports = function(req, res, next) {
       if (!Boolean(req.session.known_associates.find(function(el){
         return el.id == supe.id
       }))) {
+        supe.relationship = "Supe";
         req.session.known_associates.push(supe);
       }        
     })

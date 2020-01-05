@@ -1,7 +1,6 @@
 head
   style
     include ../stylesheets/basic.css
-    //- include ../stylesheets/create-task.css
     include ../stylesheets/dashboard.css
     include ../stylesheets/create-task.css
   include ./partials/topbar.pug
@@ -19,7 +18,6 @@ head
     let supes = !{JSON.stringify(supes)};
     let ka = !{JSON.stringify(known_associates)}
 
-
     //- Announce self to server on socket
     var socket = io();
     let id = "#{id}";
@@ -34,7 +32,7 @@ head
 
 
 
-+topbar(name)
++topbar(name, unreadNotifications)
 +message(messages)
 
 

@@ -39,7 +39,11 @@ const UserSchema = new mongoose.Schema({
     required: true,
     default: []
   },
-
+  unreadNotifications: {
+    type: Boolean,
+    required: false,
+    default: false
+  }
 })
 
 module.exports = mongoose.model('User', UserSchema);

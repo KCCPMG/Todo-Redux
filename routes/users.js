@@ -71,6 +71,23 @@ router.post('/login/:confirmLink', function(req, res, next) {
 })
 
 
+router.get('/search/:lookup', ensureAuthenticated, function(req, res){
+  let lookup = req.params.lookup;
+  let lookup_reg = new RegExp(lookup, 'gi')
+
+  let results = [];
+  User.find({$or:[{name: lookup_reg}, {email: lookup_reg}]},function(err, data) {
+    if (err) console.log("Search error", err);
+    else {
+      for (datum of data) {
+        results.push({name:datum.name, email:datum.email});
+      }
+      res.send(results);
+    }
+  })
+})
+
+
 router.get('/:userID', ensureAuthenticated, function(req, res){
   let id = req.params.userID;
   User.findById(id, function(err, user){
@@ -82,7 +99,6 @@ router.get('/:userID', ensureAuthenticated, function(req, res){
         email: user.email,
         name: user.name
       }
-      req.session.known_associates.push(foundUser)
       res.send(foundUser);
     }
   })

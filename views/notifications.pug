@@ -1,0 +1,41 @@
+head
+  style
+    include ../stylesheets/basic.css
+    include ../stylesheets/dashboard.css
+    include ../stylesheets/create-task.css
+    include ../stylesheets/notifications.css
+    include ../stylesheets/display-person.css
+  include ./partials/topbar.pug
+  include ./partials/message.pug
+  script(src='./socket.io/socket.io.js')
+  script
+    include ../scripts/jquery.js
+    include ../scripts/createTask.js
+    include ../scripts/displayPerson.js
+    include ../scripts/taskSocket.js
+    include ../scripts/notification.js
+    
++topbar(name, unreadNotifications)
+
+script.
+
+  $('document').ready(function(){
+    var notifications = !{JSON.stringify(notifications)};
+
+    var self_id = "#{id}";
+    var socket = initializeSocket(self_id);
+
+    socket.emit('read-messages');
+    $('#notification-icon').css({'color': 'white'})
+    
+    var known_associates = !{JSON.stringify(known_associates)}
+    var broken_notifications = [];
+    var unknown_associates = [];  
+
+    notifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    for (let note of notifications) {
+      $('body').append(renderNotification(note, self_id, known_associates, unknown_associates, broken_notifications, socket));
+    }
+    updateKnownAssociates(broken_notifications, self_id, known_associates, unknown_associates, socket);
+  })

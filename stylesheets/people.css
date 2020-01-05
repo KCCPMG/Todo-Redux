@@ -3,15 +3,52 @@
   font-size: 32;
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-color: rgb(3, 145, 180);
+  text-decoration-color: black;
   margin-top: 8vh;
   margin-left: 2.5vw;
   margin-right: 2.5vw;
 }
+
+.people-selector-selected {
+  font-size: 34;
+  text-decoration-color: rgb(3, 145, 180);
+}
+
 
 #separation-bar {
   height: 10px;
   width: 100%;
   background-color: rgb(3, 145, 180);
   margin-top: 25px;
+  
+}
+
+#people-search-bar {
+  display: block;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  border-style: solid;
+  padding: 3px;
+  border-radius: 22px;
+  border-width: 2px;
+  border-color: black;
+  contain: contain;
+  width: 400px;
+}
+
+#people-search-bar > textarea {
+  font-size: 20px;
+  width: 330px;
+  overflow: none;
+  outline: none;
+  resize: none;
+  border: none;
+}
+
+#people-search-bar > i {
+  margin: auto;
+  font-size: 28px;
+  position: relative;
+  bottom: 2px;
 }

@@ -13,7 +13,7 @@ body {
 .welcome {
   float: left;
   color: white;
-  font-size: 24px;
+  font-size: 30px;
 }
 
 #settings-logout-links {
@@ -21,10 +21,11 @@ body {
 }
 
 .topbar-link {
-  padding: 3px;
+  padding: 6px;
   color: white;
-  font-size: 18px;
+  font-size: 30px;
   display: table-cell;
   vertical-align: middle;
+  margin-left: 5px;
 }
 
