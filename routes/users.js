@@ -12,13 +12,16 @@ router.post('/login', function(req, res, next) {
   passport.authenticate('local', function(err, user, info){
     if (err) return next(err);
     if (!user) {
+      console.log(info);
       return res.redirect('/');
     } if (user.confirmed == false) {
+      console.log(info);
       req.session.messages = ["Please confirm your account before logging in"];
       return res.redirect('/');
     }
     req.logIn(user, function(err){
       if (err) return next(err);
+      console.log(info);
       req.session.messages = ["Welcome back, " + req.user.name + "!"];
 
       return res.redirect('/dashboard');
@@ -36,13 +39,17 @@ router.get('/logout', function(req, res){
 
 router.get('/login/:confirmLink', function(req, res) {
   let confirmLink = req.url.slice(7) 
+  if (req.session.messages == ["Thank you! We're sending you an email to confirm your account!"]) {
+    req.session.messages = [];
+  }
   User.findOne({confirmLink: confirmLink}, function(err, user){
     if (err) console.log(err);
-    if (user == null) res.render('../views/index', {messages: ['Invalid link']});
+    if (user == null) res.render('../views/confirm', {messages: ['Invalid link']});
     else {
-      req.session.messages = ['Please log in to confirm your account']
-      res.render('../views/index', {
-        link: confirmLink
+      if (!req.session.messages) req.session.messages = ['Please log in to confirm your account']
+      res.render('../views/confirm', {
+        link: confirmLink,
+        messages: req.session.messages
       });
     }
   })
@@ -50,23 +57,29 @@ router.get('/login/:confirmLink', function(req, res) {
 
 
 router.post('/login/:confirmLink', function(req, res, next) {
-  let confirmLink = req.url.slice(7); 
+  let confirmLink = req.url.slice(7);
+  console.log(confirmLink); 
   passport.authenticate('local', function(err, user, info) {
-    if (err) return next(err);  
-    if (!user) {
-      req.session.messages = ["Please double-check your email address"]
-      return res.redirect('/login/'+confirmLink);
-    } if (user.confirmLink != confirmLink) {
-      req.session.messages = ["Are you sure you're using the right link?"]
-      return res.redirect('/login'+confirmLink);
+    if (err) {
+      console.log(err);
+      return next(err);  
     }
-    req.logIn(user, function(err){
-      if (err) return next(err);
-      req.session.messages = ["Thanks for confirming, " + user.name + ", you're all set!"];
-      user.confirmed = true;
-      user.save();
-      return res.redirect('/dashboard');
-    })
+    if (!user) {
+      req.session.messages = ["Please double-check your email address and password"]
+      return res.redirect('/users/login/'+confirmLink);
+    } else if (user.confirmLink != confirmLink) {
+      req.session.messages = ["Are you sure you're using the right link?"]
+      return res.render('../views/confirm', {messages: req.session.messages});
+    }
+    else {
+      req.logIn(user, function(err){
+        if (err) return next(err);
+        req.session.messages = ["Thanks for confirming, " + user.name + ", you're all set!"];
+        user.confirmed = true;
+        user.save();
+        return res.redirect('/dashboard');
+      })
+    }
   })(req, res, next); 
 })
 

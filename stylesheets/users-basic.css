@@ -1,0 +1,9 @@
+@font-face {
+  font-family: hk-grotesk;
+  src: url('../../public/hk-grotesk.medium.ttf');
+}
+
+body {
+  text-align: center;
+  font-family: "hk-grotesk";
+}

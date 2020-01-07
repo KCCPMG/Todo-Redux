@@ -131,7 +131,7 @@ router.get('/getSupes', ensureAuthenticated, refreshLocals, function(req, res){
   if (supes.length == 0) res.send([]);
   let output = [];
 
-  for (supe of supes) {
+  for (let supe of supes) {
     User.findById(supe, function(err, foundUser){
       if (err) output.push({
         username: err,
@@ -158,7 +158,7 @@ router.get('/getSubs', ensureAuthenticated, refreshLocals, function(req, res){
   if (subs.length == 0) res.send([]);
   let output = []; 
 
-  for (sub of subs) {
+  for (let sub of subs) {
     User.findById(sub, function(err, foundUser){
       if (err) output.push({
         username: err,
@@ -186,7 +186,7 @@ router.get('/getCollabs', ensureAuthenticated, refreshLocals, function(req,res){
   if (collabs.length == 0) res.send([]);
   let output = [];
 
-  for (collab of collabs) {
+  for (let collab of collabs) {
     User.findById(collab, function(err, foundUser){
       if (err) output.push({
         username: err,
@@ -261,10 +261,10 @@ router.post('/register',
 
           // Send email for confirmation
           var transport = nodemailer.createTransport({
-            service: 'gmail',
+            service: 'outlook',
             auth: {
               user: 'connorwales@gmail.com',
-              pass: process.env.EmailPassword
+              pass: process.env.Email_Password
             },
             tls: {
               rejectUnauthorized: false,
@@ -275,9 +275,9 @@ router.post('/register',
             from: 'connorwales@gmail.com',
             to: email,
             subject: 'Confirm your ToDo Account',
-            html: pug.renderFile('C:/Users/Connor/Desktop/Code/Todo Redux/views/welcomeEmail.pug', {
+            html: pug.renderFile('./views/welcomeEmail.pug', {
               name: name,
-              link: "http://localhost:8080/users/login/" + hash_id,
+              link: "https://localhost:8080/users/login/" + hash_id,
             })
           }
 
@@ -289,8 +289,10 @@ router.post('/register',
     });
 
     // Redirect to home page
-    let messages = ["Thank you! We're sending you an email to confirm your account!"];
-    res.render('../views/index', {messages:messages})
+    req.session.messages = ["Thank you! We're sending you an email to confirm your account!"];
+    res.redirect('/');
+    // let messages = ["Thank you! We're sending you an email to confirm your account!"];
+    // res.render('../views/index', {messages:messages})
   }
 
   res.end();

@@ -82,6 +82,7 @@ function renderTask(task) {
       let taskCopy = Object.assign({}, tasks.find((el) => el._id == taskid));
       let self_assigned = Boolean(taskCopy.assignedTo.indexOf(taskid));
 
+
       addTaskBox();
       $('#title').val(taskCopy.title);
       $('#text').val(taskCopy.text);
@@ -141,6 +142,9 @@ function renderTask(task) {
 
     addTaskBox();
 
+    $('#tags').val(parentTaskCopy.tags);
+    $('#assignedTo').val(getEmails(parentTaskCopy.assignedTo));
+
     $("#submitButton").unbind('click');
     $("#submitButton").click(function(){
       let assignees = $("#assignedTo")
@@ -162,10 +166,13 @@ function renderTask(task) {
       let subTask = {};
       subTask.title = $('#title').val();
       subTask.text = $('#text').val();
+      subTask.tags = $('#tags').val().split(" ").filter((el)=> el.length>0);
       subTask.assignedTo = ids;
       subTask.assignedBy = id;
       subTask.assignedDue = $('#assignedDue').val();
       subTask.parentTask = parentid;
+
+      console.log(subTask);
 
       removeTaskbox();
       let emitObj = {

@@ -63,8 +63,6 @@ function removeTaskbox(){
 
 function addTaskBox(){
 
-  console.log('click-test');
-
   $('body').append($('<div/>', {
     id: 'sheet',
   }))
