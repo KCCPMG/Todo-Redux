@@ -12,6 +12,16 @@ function initializeSocket(id){
     $('#notification-icon').css({color: "purple"})
   })
 
+  socket.on('delete-task', function(task){
+    console.log('taskSocket.js - task was deleted: ', task);
+    // Stub
+  })
+
+  socket.on('task-edit', function(task){
+    console.log('taskSocket.js - task was edited: ', task);
+    // Stub
+  })
+
   return socket;
 }
 

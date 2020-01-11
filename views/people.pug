@@ -7,21 +7,13 @@ head
   include ./partials/topbar.pug
   include ./partials/message.pug
   link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
-
   script(src='./socket.io/socket.io.js')
   script
     include ../scripts/jquery.js
     include ../scripts/createTask.js
     include ../scripts/displayPerson.js
-  script.
-    var socket = io();
-    let self_id = "#{id}";
-    socket.emit('declareId', {userId : "#{id}"});
-    socket.on('message', function(message){
-      console.log(message);
-      // Stub
-    })
-    
+    include ../scripts/taskSocket.js
+
     
 
 +topbar(name, unreadNotifications)
@@ -115,6 +107,11 @@ script.
   
 
   $(document).ready(function(){
+    let self_id = "#{id}";
+    var socket = initializeSocket(self_id);
+
+
+
     let displayed = "";
     getSupes();
     getSubs();

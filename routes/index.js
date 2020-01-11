@@ -235,7 +235,7 @@ router.post('/register',
   let error_msgs = [];
 
   if (name.length==0) error_msgs.push("Please enter at least one character for your name.");
-  if (email.match(/^\w+@\w+\.\w+/) == null) error_msgs.push("Please enter a valid email address.");
+  if (email.match(/^\w+[\w\.]+@\w+\.\w+/) == null) error_msgs.push("Please enter a valid email address.");
   if (password != confirm_password) error_msgs.push("Please make sure your passwords match.");
 
   if (error_msgs.length > 0) {
@@ -277,7 +277,7 @@ router.post('/register',
             subject: 'Confirm your ToDo Account',
             html: pug.renderFile('./views/welcomeEmail.pug', {
               name: name,
-              link: "https://localhost:8080/users/login/" + hash_id,
+              link: "https://" + req.get('host') + "/users/login/" + hash_id
             })
           }
 
@@ -291,8 +291,6 @@ router.post('/register',
     // Redirect to home page
     req.session.messages = ["Thank you! We're sending you an email to confirm your account!"];
     res.redirect('/');
-    // let messages = ["Thank you! We're sending you an email to confirm your account!"];
-    // res.render('../views/index', {messages:messages})
   }
 
   res.end();

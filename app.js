@@ -76,6 +76,22 @@ io.on('connection', function(socket) {
     }
   }
 
+  function removeDuplicates(arrIn) {
+    var arrOut = [];
+    for (let i of [...arrIn.keys()]) {
+      el = arrIn[i];
+      elFound = false;
+      for (let j=i+1; j<arrIn.length; j++) {
+        if (JSON.stringify(arrIn[j]) == JSON.stringify(arrIn[i])) {
+          elFound = true;
+          break;
+        }
+      }
+      if (elFound == false) arrOut.push(el);
+    }
+    return arrOut;
+  }
+
   socket.on('declareId', function(data){
     socketId = socket.id
     userId = data.userId;
@@ -94,28 +110,96 @@ io.on('connection', function(socket) {
     })
   })
 
-  socket.on('task-edit', function(data){
-    Task.findByIdAndUpdate(data._id, data, {new:true}, function(err, task){
+  socket.on('delete-task', function(id){
+    Task.findById(id, function(err, task) {
       if (err) console.log(err);
-      else { 
-        let sockets = [];
-        let user_ids = [...task.assignedTo];
-        
-        let self_assigned = false;
-        for (let tu of user_ids) {
-          if (String(tu) == String(task.assignedBy)) self_assigned = true;
-        }
-        if (self_assigned==false) user_ids.push(task.assignedBy);
+      if (task==null) {
+        console.log('no task');
+        return socket.emit('error', 'Could not delete task');
+      }
 
-        for (let user_id of user_ids) {
-          if (users[user_id]) {
-            let userObj = users[user_id]
-            for (let sock_id of Object.keys(userObj)) {
-              let socket = userObj[sock_id];
-              socket.emit('task-edit', task);
-            }
+      origTaskUsers = [...task.assignedTo]
+      origTaskUsers.push(task.assignedBy)
+      origTaskUsers = removeDuplicates(origTaskUsers);
+
+      let deletedTask = Object.assign({}, task._doc)
+      console.log("original task: ", deletedTask);
+
+      task.remove(function(err){
+        if (err) console.log(err);
+        else {         
+          for (let user of origTaskUsers) {
+            notifyUser(user, 'delete-task', deletedTask)
           }
         }
+      })
+
+      // Subtasks
+      Task.find({parentTask: mongoose.Types.ObjectId(id)}, function(err, subtasks){
+        if (err) console.log(err);
+        console.log('Subtasks: ', subtasks);
+        for (let st of subtasks) {
+          let subtaskUsers = [...st.assignedTo]
+          subtaskUsers.push(st.assignedBy);
+          subtaskUsers = removeDuplicates(subtaskUsers);;
+          st.parentTask = null;
+          st.save(function(err) {
+            if (err) console.log(err);
+            else {
+              for (let user of subtaskUsers) {
+                notifyUser(user, 'task-edit', st);
+              }
+            }
+          });
+        }
+      })
+
+      // Children
+      Task.find({subTasks:task._id}, function(err, parentTasks) {
+        if (err) console.log(err);
+        else if (parentTasks.length>0){
+          for (let parentTask of parentTasks) {
+            parentTask.subTasks = parentTask.subTasks.filter(function(id){
+              return (JSON.stringify(id)!=JSON.stringify(task._id));
+            })
+            parentTask.save(function(err){
+              if (err) console.log(err);
+              let ptUsers = [...parentTask.assignedTo];
+              ptUsers.push(parentTask.assignedBy);
+              ptUsers = removeDuplicates(ptUsers);
+              for (let user of ptUsers) {
+                notifyUser(user, 'task-edit', parentTask);
+              }
+            })
+          }
+        }
+      })
+
+    })
+  })
+
+
+  socket.on('task-edit', function(data){
+    Task.findById(data._id, function(err, task){
+      if (err) console.log(err);
+      else {
+        let user_ids = [...task.assignedTo];
+        user_ids.push(task.assignedBy);
+        user_ids.push(...data.assignedTo);
+        user_ids=removeDuplicates(user_ids);
+
+        for (let key of Object.keys(data)){
+          task[key] = data[key];
+        }
+
+        task.save(function(err){
+          if (err) console.log(err);
+          else {
+            for (let user of user_ids) {
+              notifyUser(user, 'task-edit', task)
+            }
+          }
+        })
       }
     })
   })
@@ -267,13 +351,13 @@ io.on('connection', function(socket) {
                     }
                     else if (note.type.match("Add As Supe")) {
                       requester.supes.push(accepterId);
-                      accepter.supes.push(requesterId);
+                      accepter.subs.push(requesterId);
                     }
                     else if (note.type.match("Add As Collab")) {
                       requester.subs.push(accepterId);
                       accepter.supes.push(requesterId);
                       requester.supes.push(accepterId);
-                      accepter.supes.push(requesterId);
+                      accepter.subs.push(requesterId);
                     }
 
                     requester.save(function(err){

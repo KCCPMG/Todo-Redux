@@ -46,9 +46,6 @@ function addAutocomplete(element, valueArr) {
       }
     }
     $('.selection-option').click(function(){
-      console.log('clicked');
-      console.log($(this));
-      console.log($(this).text());
       element.val(element.val().slice(0, element.val().lastIndexOf(" ")) + " " + $(this).text());
     })
   })
@@ -61,7 +58,7 @@ function removeTaskbox(){
 }
 
 
-function addTaskBox(){
+function addTaskBox(id, socket, supes, ka, subs){
 
   $('body').append($('<div/>', {
     id: 'sheet',
@@ -132,7 +129,7 @@ function addTaskBox(){
   $('#submitButton').click(function(){
     let assignees = $("#assignedTo")
       .val()
-      .replace(/ /g, '')
+      .replace(/ /g, ',')
       .split(',')
       .filter((el) => {if (el!="") return true});
     let ids = [];
@@ -142,7 +139,7 @@ function addTaskBox(){
       }
     }
     if ($("#metoo-checkbox")[0].checked){
-      ids.push(self_id);
+      ids.push(id);
     }
 
     $.ajax({

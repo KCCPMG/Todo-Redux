@@ -1,4 +1,8 @@
-function renderTask(task) {
+function renderTask(task, id, known_associates, tasks, socket) {
+
+  var subs = known_associates.filter((ka) => ka.relationship=="Sub" || ka.relationship=="Collab")
+
+  var supes = known_associates.filter((ka) => ka.relationship=="Supe" || ka.relationship=="Collab")
 
   let completeBtnStr = task.completed==true ? "Mark As Incomplete" : "Mark As Complete"; 
   
@@ -35,13 +39,13 @@ function renderTask(task) {
   let ab = $('<p/>', {
     class: "task-assigned-by"
   })
-  ab.text("Assigned By: " + getEmail(task.assignedBy));
+  ab.text("Assigned By: " + getEmail(task.assignedBy, known_associates));
   taskbox.append(ab);
 
   let at = $('<p/>', {
     class: "task-assigned-to"
   })
-  at.text("Assigned To: " + getEmails(task.assignedTo).join(", "));
+  at.text("Assigned To: " + getEmails(task.assignedTo, known_associates).join(", "));
   taskbox.append(at);
 
   taskbox.append(($('<p/>', {
@@ -83,10 +87,10 @@ function renderTask(task) {
       let self_assigned = Boolean(taskCopy.assignedTo.indexOf(taskid));
 
 
-      addTaskBox();
+      addTaskBox(id, socket, supes, known_associates, subs);
       $('#title').val(taskCopy.title);
       $('#text').val(taskCopy.text);
-      $('#tags').val(taskCopy.tags);
+      $('#tags').val(taskCopy.tags.join(" "));
       $('#assignedTo').val(
         $("#"+div_id+" > .task-assigned-to").text().slice(13)
       );
@@ -97,7 +101,7 @@ function renderTask(task) {
       $("#submitButton").click(function(){
         let assignees = $("#assignedTo")
         .val()
-        .replace(/ /g, '')
+        .replace(/ /g, ',')
         .split(',')
         .filter((el) => {if (el!="") return true});
 
@@ -125,11 +129,52 @@ function renderTask(task) {
     button_row.append(editTaskButton);
   }
 
+  if (id==task.assignedBy) {
+    
+    let deleteTaskButton = $('<button/>', {
+      class: "delete-task-button"
+    }).text("Delete Task")
+    .click(function(e){
+      let div_id = (e.target.parentElement.parentElement.id);
+      let parentid = div_id.slice(5,);
+      let parentTaskCopy = Object.assign({}, tasks.find((el)=>el._id == parentid));
 
-  button_row.append(($('<button/>', {
-    class: "delete-task-button"
-  }).text("Delete Task")));
+      $('body').append($('<div/>', {
+        id: 'sheet',
+      }))
+      let warningBox = $('<div/>',{
+        id: 'warning-box',
+      }).append($('<h2/>', {}).text('WARNING!'))
+      .append($('<p/>', {}).text('Deleting a task CANNOT be undone, and any subtasks will be orphaned. Do you want to continue?'));
 
+      let warningBoxButtonRow = $('<div/>', {
+        id: 'warning-box-button-row'
+      });
+
+      warningBoxButtonRow.append($('<button/>', {
+        id: 'confirm-delete-button'
+      }).text('Confirm Delete')
+      .click(function(){
+        warningBox.remove();
+        $('#sheet').remove();
+        socket.emit('delete-task', task._id);
+      }));
+
+      warningBoxButtonRow.append($('<button/>', {
+        id: 'cancel-delete-button'
+      }).text('Cancel Delete')
+      .click(function(){
+        warningBox.remove();
+        $('#sheet').remove();
+      }));
+
+      warningBox.append(warningBoxButtonRow);
+      $('body').append(warningBox);
+
+    });
+
+    button_row.append(deleteTaskButton);
+  }
 
   let addSubtaskButton = $('<button/>', {
     class: "add-subtask-button"
@@ -140,16 +185,16 @@ function renderTask(task) {
     let parentid = div_id.slice(5,);
     let parentTaskCopy = Object.assign({}, tasks.find((el)=>el._id == parentid));
 
-    addTaskBox();
+    addTaskBox(id, socket, supes, known_associates, subs);
 
-    $('#tags').val(parentTaskCopy.tags);
-    $('#assignedTo').val(getEmails(parentTaskCopy.assignedTo));
+    $('#tags').val(parentTaskCopy.tags.join(" "));
+    $('#assignedTo').val(getEmails(parentTaskCopy.assignedTo, known_associates));
 
     $("#submitButton").unbind('click');
     $("#submitButton").click(function(){
       let assignees = $("#assignedTo")
       .val()
-      .replace(/ /g, '')
+      .replace(/ /g, ',')
       .split(',')
       .filter((el) => {if (el!="") return true});
 
@@ -172,8 +217,6 @@ function renderTask(task) {
       subTask.assignedDue = $('#assignedDue').val();
       subTask.parentTask = parentid;
 
-      console.log(subTask);
-
       removeTaskbox();
       let emitObj = {
         parentTask: parentTaskCopy,
@@ -185,46 +228,22 @@ function renderTask(task) {
   button_row.append(addSubtaskButton);
   taskbox.append(button_row);
 
-  let et = $('<div/>');
-  taskbox.append(et);
-  
-  if (task.subTasks.length > 0) beExpandable();
-  function beExpandable(){
-    et.removeClass();
-    et.addClass('expand_subtasks');
-    et.text('+ Subtasks +');
-    et.unbind('click');
-    et.click(function(e){
-      let div_id = (e.target.parentElement.parentElement.id);
-      let id = div_id.slice(5,);
-      let task_container = e.target.parentElement.parentElement;
-      let task = getTaskFromEl(task_container);
-      let subtaskContainer = $(task_container.getElementsByClassName("subtasks-container")[0]);
-      for (let st of task.subTasks) {
-        let subtask = tasks.find((t)=>t._id == st);
-        if (subtask) {
-          let rendered = renderTask(subtask);
-          subtaskContainer.append(rendered);
-        }      
+  if (task.subTasks.length>0) {
+    let hasSubtasks = false;
+    for (let st_id of task.subTasks) {
+      if (tasks.find((t)=>t._id==st_id)) {
+        taskbox.append(renderShowSubTasks(task, id, known_associates, tasks, socket))
+        hasSubtasks=true;
+        break;
       }
-      beCollapsible();
-    });
-  }
-
-  function beCollapsible() {
-    et.removeClass();
-    et.addClass('collapse_subtasks');
-    et.text('- Collapse -');
-    et.unbind('click');
-    et.click(function(e){
-      let div_id = (e.target.parentElement.parentElement.id);
-      let task_container = e.target.parentElement.parentElement;
-      let task = getTaskFromEl(task_container);
-      let subtaskContainer = $(task_container.getElementsByClassName("subtasks-container")[0])[0];
-      subtaskContainer.innerHTML = "";
-      beExpandable();
-    })
-  }
+      
+    }
+    if(!hasSubtasks) taskbox.append($('<div/>', {
+      class: 'expand-subtasks-control'
+    }))
+  } else taskbox.append($('<div/>', {
+    class: 'expand-subtasks-control'
+  }))
 
   let subtasks_container = $('<div/>', {
     class: "subtasks-container"
@@ -250,7 +269,7 @@ function getTaskEl(id) {
 }
 
 
-function getTaskFromEl(el) {
+function getTaskFromEl(el, tasks) {
   let taskid = el.id.slice(10);
   return tasks.find((t)=>t._id==taskid);
 }
@@ -260,8 +279,9 @@ function getTaskFromEl(el) {
 
 var unknown_associates = [];
 
-function getEmail(userID){
-  let ka = known_associates.find((el) => el.id == userID);
+function getEmail(userID, known_associates){
+
+  let ka = known_associates.find((el)=>el.id == userID);
   if (ka==undefined) {
     if (!unknown_associates.includes(userID)) unknown_associates.push(userID)
     return '...';
@@ -269,18 +289,16 @@ function getEmail(userID){
 }
 
 
-function getEmails(userIDs) {
+function getEmails(userIDs, known_associates) {
   let arrout = []
   for (let uID of userIDs) {
-    arrout.push(getEmail(uID));
+    arrout.push(getEmail(uID, known_associates));
   }
   return arrout;
 }
 
 
-function updateKnownAssociates(){
-  console.log('update known associates');
-  console.log('known associates going in', known_associates);
+function updateKnownAssociates(known_associates, unknown_associates, tasks, socket, id){
 
   promises = [];
   while (unknown_associates.length>0) {
@@ -303,11 +321,9 @@ function updateKnownAssociates(){
         brokenTaskEls.push(taskEl.parentElement);
       }
     }
-    console.log('Broken Tasks', brokenTaskEls);
     for (taskEl of brokenTaskEls) {
-      $(taskEl).replaceWith(renderTask(getTaskFromEl(taskEl)));
+      $(taskEl).replaceWith(renderTask(getTaskFromEl(taskEl, tasks), id, known_associates, tasks, socket));
     }
-    console.log('known_associates after promise resolution', known_associates);
   })
 }
 
@@ -315,7 +331,7 @@ function updateTags() {
   let tag_list = [];
 }
 
-function renderTaskFilter(tasks, tags, filtered_tasks){
+function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let taskFilter = $('<div/>', {
     class: 'filter'
   })
@@ -344,7 +360,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
 
   filterOptions.append(((titleFilter.append((titleFilterLabel.append(titleFilterInput))))))
   titleFilterInput.on('input', function(){
-    filterTasks();
+    filterTasks(known_associates);
   })
   
 
@@ -362,7 +378,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
 
 
   filterOptions.append(((textFilter.append((textFilterLabel.append(textFilterInput))))))
-  textFilterInput.on('input', function(){filterTasks()})
+  textFilterInput.on('input', function(){filterTasks(known_associates)})
   
 
 
@@ -380,7 +396,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
 
 
   filterOptions.append(((tagFilter.append((tagFilterLabel.append(tagFilterInput))))))
-  tagFilterInput.on('input', function(){filterTasks()});
+  tagFilterInput.on('input', function(){filterTasks(known_associates)});
   
 
 
@@ -396,7 +412,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
   })
 
   filterOptions.append(((assignedByFilter.append((assignedByFilterLabel.append(assignedByFilterInput))))))
-  assignedByFilter.on('input', function(){filterTasks()});
+  assignedByFilter.on('input', function(){filterTasks(known_associates)});
 
   let assignedToFilter = $('<div/>', {
     class: 'task-filter'
@@ -410,7 +426,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
   })
 
   filterOptions.append(((assignedToFilter.append((assignedToFilterLabel.append(assignedToFilterInput))))))
-  assignedToFilter.on('input', function(){filterTasks()});
+  assignedToFilter.on('input', function(){filterTasks(known_associates)});
 
 
   let completedFilter= $('<div/>', {
@@ -428,7 +444,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
 
   completedFilterInput.append(optionNull).append(optionYes).append(optionNo);
   completedFilterInput.on('change', function(){
-    filterTasks();
+    filterTasks(known_associates);
   })
 
   filterOptions.append(((completedFilter.append((completedFilterLabel.append(completedFilterInput))))))
@@ -462,12 +478,11 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
   assignedDateFilterLabel.append(assignedDateTypeSelector);
   filterOptions.append(((assignedDateFilter.append((assignedDateFilterLabel.append(assignedDateFilterInput))))))
   assignedDateTypeSelector.on('change', function(){
-    filterTasks()
+    filterTasks(known_associates)
   });
   assignedDateFilterInput.on('input', function(){
-    filterTasks()
+    filterTasks(known_associates)
   })
-
 
   let hasSubtasksFilter= $('<div/>', {
     class: 'task-filter'
@@ -488,7 +503,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
     $('<option/>', {value:"No"}).text("No")
   );
   hasSubtasksFilterInput.on('change', function(){
-    filterTasks();
+    filterTasks(known_associates);
   })
 
   filterOptions.append(((hasSubtasksFilter.append((hasSubtasksFilterLabel.append(hasSubtasksFilterInput))))))
@@ -513,7 +528,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
     $('<option/>', {value:"No", selected: true}).text("No")
   );
   includeSubtasksFilterInput.on('change', function(){
-    filterTasks();
+    filterTasks(known_associates);
   })
 
   filterOptions.append(((includeSubtasksFilter.append((includeSubtasksFilterLabel.append(includeSubtasksFilterInput))))))
@@ -584,7 +599,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
     .filter((s) => s.length>0);
     if (words.length == 0) return true;
     else for (let word of words) {
-      if (!getEmail(task.assignedBy).match(new RegExp(word, 'gi'))) {
+      if (!getEmail(task.assignedBy, known_associates).match(new RegExp(word, 'gi'))) {
         return false;
       }
     }
@@ -592,7 +607,7 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
   }
 
   function checkAssignedTo(task){
-    emails = getEmails(task.assignedTo).join(' ')
+    emails = getEmails(task.assignedTo, known_associates).join(' ')
     let words = assignedToFilterInput
     .val()
     .split(' ')
@@ -647,10 +662,9 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
   }
 
 
-  function filterTasks() {
+  function filterTasks(known_associates) {
     filtered_tasks = []
     for (let task of tasks) {
-      // let passes_check = true;
       if (checkTitle(task) == false) continue
       if (checkText(task) == false) continue
       if (checkTags(task) == false) continue
@@ -662,23 +676,65 @@ function renderTaskFilter(tasks, tags, filtered_tasks){
       if (checkIncludeSubtasks(task) == false) continue
       filtered_tasks.push(task);
     }
-    updateFilteredTasks(filtered_tasks);
     $('#task-view').html("");
-    $('#task-view').append(renderTasks(filtered_tasks, tags));
-    updateKnownAssociates();
+    $('#task-view').append(renderTasks(filtered_tasks, id, known_associates, tasks, socket));
+    updateKnownAssociates(known_associates, unknown_associates, tasks, socket, id);
   }
 
-  filterTasks();
+  filterTasks(known_associates);
   return taskFilter;
 }
 
-function renderTasks(tasks, tags) {
+function renderTasks(filtered_tasks, id, known_associates, all_tasks, socket) {
   let renderedTasks = [];
-  for (let task of tasks) {
-    renderedTasks.push(renderTask(task));
+  for (let task of filtered_tasks) {
+    renderedTasks.push(renderTask(task, id, known_associates, all_tasks, socket));
   }
   if (renderedTasks == []) return "No Tasks to Display";
   else return renderedTasks;
 }
+
+
+function renderShowSubTasks(parentTask, self_id, known_associates, tasks, socket){
+  let row = $('<div/>',{
+    class: 'show-subtasks expand-subtasks-control'
+  })
+  .text('+ Show Subtasks +')
+  .click(function(){
+    showSubTasks(parentTask, $(this), self_id, known_associates, tasks, socket);
+  });
+  return row;
+}
+
+function renderCollapseSubTasks(parentTask, self_id, known_associates, tasks, socket){
+  let row = $('<div/>',{
+    class: 'collapse-subtasks expand-subtasks-control'
+  })
+  .text('- Collapse Subtasks -')
+  .click(function(){
+    collapseSubTasks(parentTask, $(this), self_id, known_associates, tasks, socket);
+  });
+  return row;
+}
+
+function showSubTasks(parentTask, renderedRow, self_id, known_associates, tasks, socket){
+  subTaskContainer = getTaskEl(parentTask._id).children('.subtasks-container');
+
+  for (let st_id of parentTask.subTasks) {
+    if (tasks.find((t)=>t._id==st_id)) {
+      let st = tasks.find((task)=>task._id==st_id);
+      let renderedSub = renderTask(st, self_id, known_associates, tasks, socket);
+      subTaskContainer.append(renderedSub);
+    }
+  }
+  renderedRow.replaceWith(renderCollapseSubTasks(parentTask, self_id, known_associates, tasks, socket));
+}
+
+function collapseSubTasks(parentTask, renderedRow, self_id, known_associates, tasks, socket) {
+  subTaskContainer = getTaskEl(parentTask._id).children('.subtasks-container');
+  subTaskContainer.empty();
+  renderedRow.replaceWith(renderShowSubTasks(parentTask, self_id, known_associates, tasks, socket))
+}
+
 
 

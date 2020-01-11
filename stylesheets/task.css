@@ -27,7 +27,25 @@
   border-radius: 10px;
   border: solid black 2px;
   padding: 0px;
-  
+  animation-name: task-container;
+  animation-duration: 0.5s;
+
+}
+
+@keyframes task-container {
+  0% {
+    width: 0%; 
+    transform: scaleY(0)
+  }
+  50% {
+    width: 90%;
+    transform: scaleY(0)
+  }
+
+  100% {
+    width: 90%; 
+    transform: scaleY(1);
+  }
 }
 
 h4 {
@@ -52,18 +70,22 @@ h4 {
   border-width: 1px;
 }
 
-.expand_subtasks {
+.expand_subtasks, .show-subtasks {
   padding-top: 2px;
   border-top: black solid 2px;
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
 }
 
-.collapse_subtasks {
+.collapse_subtasks, .collapse-subtasks {
   padding-top: 2px;
   border-top: black solid 2px;
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
+}
+
+.show-subtasks:hover, .collapse-subtasks:hover {
+  cursor: pointer;
 }
 
 .expand_subtasks:hover{
@@ -78,6 +100,14 @@ h4 {
   width: 100%;
   background-color: rgb(177, 235, 229);
   border-radius: inherit;
+  animation-name: task;
+  animation-duration: 1s;
+}
+
+@keyframes task {
+  0% {opacity: 0%;}
+  50% {opacity: 0%;}
+  100% {opacity: 100%;}
 }
 
 .completed {

@@ -7,27 +7,22 @@ head
   include ./partials/message.pug
   script(src='./socket.io/socket.io.js')
   script
-    include ../scripts/jquery.js
-  script.
-    subs = !{JSON.stringify(subs)};
-    self_id = "#{id}"
-  script
     include ../scripts/createTask.js
+    include ../scripts/jquery.js
+    include ../scripts/taskSocket.js
 
   script.
-    let supes = !{JSON.stringify(supes)};
-    let ka = !{JSON.stringify(known_associates)}
 
-    //- Announce self to server on socket
-    var socket = io();
-    let id = "#{id}";
-    socket.emit('declareId', {userId : "#{id}"});
-    socket.on('message', function(message){
-      console.log(message);
-      // Stub
-    })
     $('document').ready(function(){
-      $(".createTask").click(function(){addTaskBox()});
+
+      let id = "#{id}";
+      var socket = initializeSocket(id);
+      let supes = !{JSON.stringify(supes)};
+      let ka = !{JSON.stringify(known_associates)}
+      subs = !{JSON.stringify(subs)};
+
+
+      $(".createTask").click(function(){addTaskBox(id, socket, supes, ka, subs)});
     })
 
 

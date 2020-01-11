@@ -21,7 +21,6 @@ router.post('/login', function(req, res, next) {
     }
     req.logIn(user, function(err){
       if (err) return next(err);
-      console.log(info);
       req.session.messages = ["Welcome back, " + req.user.name + "!"];
 
       return res.redirect('/dashboard');
@@ -38,8 +37,9 @@ router.get('/logout', function(req, res){
 
 
 router.get('/login/:confirmLink', function(req, res) {
-  let confirmLink = req.url.slice(7) 
-  if (req.session.messages == ["Thank you! We're sending you an email to confirm your account!"]) {
+  let confirmLink = req.params.confirmLink
+  console.log("Get:  " + confirmLink);
+  if (req.session.messages && req.session.messages[0] == "Thank you! We're sending you an email to confirm your account!") {
     req.session.messages = [];
   }
   User.findOne({confirmLink: confirmLink}, function(err, user){
@@ -57,17 +57,20 @@ router.get('/login/:confirmLink', function(req, res) {
 
 
 router.post('/login/:confirmLink', function(req, res, next) {
-  let confirmLink = req.url.slice(7);
-  console.log(confirmLink); 
+  let confirmLink = req.params.confirmLink
+  console.log("Post: " + confirmLink); 
   passport.authenticate('local', function(err, user, info) {
     if (err) {
       console.log(err);
       return next(err);  
     }
     if (!user) {
+      console.log('login failed');
+      console.log(info);
       req.session.messages = ["Please double-check your email address and password"]
       return res.redirect('/users/login/'+confirmLink);
-    } else if (user.confirmLink != confirmLink) {
+    } 
+    else if (user.confirmLink != confirmLink) {
       req.session.messages = ["Are you sure you're using the right link?"]
       return res.render('../views/confirm', {messages: req.session.messages});
     }
