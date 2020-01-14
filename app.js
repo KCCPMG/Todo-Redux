@@ -110,6 +110,30 @@ io.on('connection', function(socket) {
     })
   })
 
+  socket.on('new-task', function(data){
+    let assigner = userId;
+    let newTask = new Task({
+      title: data.title,
+      text: data.text,
+      tags: data.tags,
+      assignedBy: assigner,
+      assignedOn: new Date(),
+      assignedDue: data.assignedDue,
+      assignedTo: data.assignedTo
+    })
+    newTask.save(function(err){
+      if (err) console.log(err);
+      else {
+        let users = [...newTask.assignedTo]
+        users.push(newTask.assignedBy);
+        users = removeDuplicates(users);
+        for (let user of users) {
+          notifyUser(user, 'new-task', newTask);
+        }
+      }
+    })
+  })
+
   socket.on('delete-task', function(id){
     Task.findById(id, function(err, task) {
       if (err) console.log(err);

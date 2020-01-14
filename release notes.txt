@@ -1,0 +1,6 @@
+1-14-20 Commit:
+
+-Modified createTask.js and app.js to change task creation to a socket event instead of an ajax POST to /createTask route in index.js. 
+-Modified index.js by deleting /createTask route.
+-Modified taskHandler.js and task.css to prevent render animation on taskHandler.js > filterTasks() when tasks were already drawn in previous view.
+-Modified taskHandler.js and taskView.pug to allow for task creation and improve consistent views of tasks during task creation, edits, and deletion, especially when applying a filter.

@@ -1,4 +1,22 @@
-function renderTask(task, id, known_associates, tasks, socket) {
+var titleFilterInput;
+var textFilterInput;
+var tagFilterInput;
+var assignedByFilterInput;
+var assignedToFilterInput;
+var completedFilterInput;
+var assignedDateTypeSelector;
+var hasSubtasksFilterInput;
+var includeSubtasksFilterInput;
+
+var tasks;
+var filtered_tasks;
+var id;
+var known_associates;
+var socket;
+var lastRenderedTasks=[];
+
+
+function renderTask(task, id, known_associates, tasks, socket, doNotReanimate) {
 
   var subs = known_associates.filter((ka) => ka.relationship=="Sub" || ka.relationship=="Collab")
 
@@ -85,7 +103,6 @@ function renderTask(task, id, known_associates, tasks, socket) {
       let taskid = div_id.slice(5,);
       let taskCopy = Object.assign({}, tasks.find((el) => el._id == taskid));
       let self_assigned = Boolean(taskCopy.assignedTo.indexOf(taskid));
-
 
       addTaskBox(id, socket, supes, known_associates, subs);
       $('#title').val(taskCopy.title);
@@ -232,18 +249,19 @@ function renderTask(task, id, known_associates, tasks, socket) {
     let hasSubtasks = false;
     for (let st_id of task.subTasks) {
       if (tasks.find((t)=>t._id==st_id)) {
-        taskbox.append(renderShowSubTasks(task, id, known_associates, tasks, socket))
+        expand_subtasks = (renderShowSubTasks(task, id, known_associates, tasks, socket));
         hasSubtasks=true;
         break;
       }
       
     }
-    if(!hasSubtasks) taskbox.append($('<div/>', {
+    if(!hasSubtasks) expand_subtasks = ($('<div/>', {
       class: 'expand-subtasks-control'
     }))
-  } else taskbox.append($('<div/>', {
+  } else expand_subtasks = ($('<div/>', {
     class: 'expand-subtasks-control'
   }))
+  
 
   let subtasks_container = $('<div/>', {
     class: "subtasks-container"
@@ -252,6 +270,21 @@ function renderTask(task, id, known_associates, tasks, socket) {
   task_container.append(taskbox);
   task_container.append(subtasks_container);
 
+  if (task.showChildren) {
+    console.log(task.title, "should show children")
+    for (let st_id of task.subTasks) {
+      if (tasks.find((t)=>t._id==st_id)) {
+        subtask = tasks.find((t)=>t._id==st_id);
+        renderedSubtask = renderTask(subtask, id, known_associates, tasks, socket, true);
+        expand_subtasks = renderCollapseSubTasks(task, id, known_associates, tasks, socket)
+        subtasks_container.append(renderedSubtask);
+      }
+    }
+  }
+
+  taskbox.append(expand_subtasks);
+
+  if (!doNotReanimate) task_container.addClass('animate-task')
   return task_container;
 }
 
@@ -275,8 +308,6 @@ function getTaskFromEl(el, tasks) {
 }
 
 
-// Below is under construction
-
 var unknown_associates = [];
 
 function getEmail(userID, known_associates){
@@ -299,7 +330,6 @@ function getEmails(userIDs, known_associates) {
 
 
 function updateKnownAssociates(known_associates, unknown_associates, tasks, socket, id){
-
   promises = [];
   while (unknown_associates.length>0) {
     let ua = unknown_associates.pop();
@@ -327,11 +357,14 @@ function updateKnownAssociates(known_associates, unknown_associates, tasks, sock
   })
 }
 
-function updateTags() {
-  let tag_list = [];
-}
+function renderTaskFilter(tasks_in, filtered_tasks_in, id_in, known_associates_in, socket_in){
 
-function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
+  tasks = tasks_in;
+  filtered_tasks = filtered_tasks_in;
+  id = id_in;
+  known_associates = known_associates_in;
+  socket = socket_in;
+
   let taskFilter = $('<div/>', {
     class: 'filter'
   })
@@ -353,7 +386,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
 
   let titleFilter = $('<div/>', {class: 'task-filter'})
   let titleFilterLabel = $('<label/>', {class: 'task-filter-label'}).text('Title')
-  let titleFilterInput = $('<input/>', {
+  titleFilterInput = $('<input/>', {
     class: 'task-filter-input',
     type: 'text'
   })
@@ -362,8 +395,6 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   titleFilterInput.on('input', function(){
     filterTasks(known_associates);
   })
-  
-
 
   let textFilter= $('<div/>', {
     class: 'task-filter'
@@ -371,16 +402,13 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let textFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Text')
-  let textFilterInput = $('<input/>', {
+  textFilterInput = $('<input/>', {
     class: 'task-filter-input',
     type: 'text'
   })
 
-
   filterOptions.append(((textFilter.append((textFilterLabel.append(textFilterInput))))))
   textFilterInput.on('input', function(){filterTasks(known_associates)})
-  
-
 
   let tagFilter = $('<div/>', {
     class: 'task-filter',
@@ -389,16 +417,13 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let tagFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text("Tags")
-  let tagFilterInput = $('<input/>', {
+  tagFilterInput = $('<input/>', {
     class: 'task-filter-input',
     type: 'text'
   })
 
-
   filterOptions.append(((tagFilter.append((tagFilterLabel.append(tagFilterInput))))))
   tagFilterInput.on('input', function(){filterTasks(known_associates)});
-  
-
 
   let assignedByFilter= $('<div/>', {
     class: 'task-filter'
@@ -406,7 +431,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let assignedByFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Assigned By')
-  let assignedByFilterInput = $('<input/>', {
+  assignedByFilterInput = $('<input/>', {
     class: 'task-filter-input',
     type: 'text'
   })
@@ -420,7 +445,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let assignedToFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Assigned To')
-  let assignedToFilterInput = $('<input/>', {
+  assignedToFilterInput = $('<input/>', {
     class: 'task-filter-input',
     type: 'text'
   })
@@ -435,7 +460,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let completedFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Completed')
-  let completedFilterInput = $('<select/>', {
+  completedFilterInput = $('<select/>', {
     class: 'task-filter-input',
   })
   let optionNull = $('<option/>', {value:"--"}).text("--");
@@ -455,7 +480,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let assignedDateFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Date')
-  let assignedDateTypeSelector = $('<select/>', {
+  assignedDateTypeSelector = $('<select/>', {
     class: 'task-filter-input'
   })
   assignedDateTypeSelector.append(
@@ -490,7 +515,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let hasSubtasksFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Has Subtasks?')
-  let hasSubtasksFilterInput = $('<select/>', {
+  hasSubtasksFilterInput = $('<select/>', {
     class: 'task-filter-input'
   })
   hasSubtasksFilterInput.append(
@@ -514,7 +539,7 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
   let includeSubtasksFilterLabel = $('<label/>', {
     class: 'task-filter-label'
   }).text('Include Subtasks?')
-  let includeSubtasksFilterInput = $('<select/>', {
+  includeSubtasksFilterInput = $('<select/>', {
     class: 'task-filter-input',
   })
 
@@ -549,141 +574,10 @@ function renderTaskFilter(tasks, filtered_tasks, id, known_associates, socket){
     })
   }
 
-  function checkTitle(task) {
-    let words = titleFilterInput
-    .val()
-    .split(' ')
-    .filter((s) => s.length>0);
-    if (words.length == 0) return true;
-    else for (let word of words) {
-      if (!task.title.match(new RegExp(word, 'gi'))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function checkText(task) {
-    let words = textFilterInput
-    .val()
-    .split(' ')
-    .filter((s) => s.length>0);
-    if (words.length == 0) return true;
-    else for (let word of words) {
-      if (!task.text.match(new RegExp(word, 'gi'))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function checkTags(task) {
-    let taskTags = task.tags.join(" ");
-    let words = tagFilterInput
-    .val()
-    .split(' ')
-    .filter((s) => s.length>0);
-    if (words.length == 0) return true;
-    else for (let word of words) {
-      if (!taskTags.match(new RegExp(word, 'gi'))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function checkAssignedBy(task) {
-    let words = assignedByFilterInput
-    .val()
-    .split(' ')
-    .filter((s) => s.length>0);
-    if (words.length == 0) return true;
-    else for (let word of words) {
-      if (!getEmail(task.assignedBy, known_associates).match(new RegExp(word, 'gi'))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function checkAssignedTo(task){
-    emails = getEmails(task.assignedTo, known_associates).join(' ')
-    let words = assignedToFilterInput
-    .val()
-    .split(' ')
-    .filter((s) => s.length>0);
-    if (words.length == 0) return true;
-    else for (let word of words) {
-      if (!emails.match(new RegExp(word, 'gi'))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function checkCompleted(task){
-    if (completedFilterInput.val()=="--") return true;
-    if (completedFilterInput.val()=="Yes") return task.completed;
-    if (completedFilterInput.val()=="No") return !task.completed;
-  }
-
-  function checkAssignedDate(task) {
-    if (assignedDateTypeSelector.val()=="--") return true;
-    if (assignedDateTypeSelector.val()=="Due On") {
-      return (task.date==assignedDateFilterInput.val());
-    }
-    if (assignedDateTypeSelector.val()=="Due By") {
-      return (task.date<=assignedDateFilterInput.val());
-    }
-    if (assignedDateTypeSelector.val()=="Due After") {
-      return (task.date>=assignedDateFilterInput.val());
-    }
-  }
-
-  function checkSubtasks(task) {
-    if (hasSubtasksFilterInput.val()=="--") return true;
-    if (hasSubtasksFilterInput.val()=="Yes") {
-      return Boolean(task.subTasks.length>0);
-    }
-    if (hasSubtasksFilterInput.val()=="No") {
-      return !Boolean(task.subTasks.length>0);
-    }
-  }
-
-  function checkIncludeSubtasks(task) {
-    if (includeSubtasksFilterInput.val()=="--") return true;
-    if (includeSubtasksFilterInput.val()=="Yes") return true;
-    if (includeSubtasksFilterInput.val()=="No") {
-      let subtask_ids = [];
-      tasks.forEach((t) => subtask_ids.push(t.subTasks));
-      subtask_ids = subtask_ids.flat();
-      if (subtask_ids.includes(task._id)) return false;
-    }
-  }
-
-
-  function filterTasks(known_associates) {
-    filtered_tasks = []
-    for (let task of tasks) {
-      if (checkTitle(task) == false) continue
-      if (checkText(task) == false) continue
-      if (checkTags(task) == false) continue
-      if (checkAssignedBy(task) == false) continue
-      if (checkAssignedTo(task) == false) continue
-      if (checkCompleted(task) == false) continue
-      if (checkAssignedDate(task) == false) continue
-      if (checkSubtasks(task) == false) continue
-      if (checkIncludeSubtasks(task) == false) continue
-      filtered_tasks.push(task);
-    }
-    $('#task-view').html("");
-    $('#task-view').append(renderTasks(filtered_tasks, id, known_associates, tasks, socket));
-    updateKnownAssociates(known_associates, unknown_associates, tasks, socket, id);
-  }
-
-  filterTasks(known_associates);
+  filterTasks();
   return taskFilter;
 }
+
 
 function renderTasks(filtered_tasks, id, known_associates, all_tasks, socket) {
   let renderedTasks = [];
@@ -728,13 +622,175 @@ function showSubTasks(parentTask, renderedRow, self_id, known_associates, tasks,
     }
   }
   renderedRow.replaceWith(renderCollapseSubTasks(parentTask, self_id, known_associates, tasks, socket));
+  parentTask.showChildren = true;
 }
 
 function collapseSubTasks(parentTask, renderedRow, self_id, known_associates, tasks, socket) {
   subTaskContainer = getTaskEl(parentTask._id).children('.subtasks-container');
   subTaskContainer.empty();
   renderedRow.replaceWith(renderShowSubTasks(parentTask, self_id, known_associates, tasks, socket))
+  parentTask.showChildren = false;
 }
 
 
+function checkTitle(task) {
+  let words = titleFilterInput
+  .val()
+  .split(' ')
+  .filter((s) => s.length>0);
+  if (words.length == 0) return true;
+  else for (let word of words) {
+    if (!task.title.match(new RegExp(word, 'gi'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkText(task) {
+  let words = textFilterInput
+  .val()
+  .split(' ')
+  .filter((s) => s.length>0);
+  if (words.length == 0) return true;
+  else for (let word of words) {
+    if (!task.text.match(new RegExp(word, 'gi'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkTags(task) {
+  let taskTags = task.tags.join(" ");
+  let words = tagFilterInput
+  .val()
+  .split(' ')
+  .filter((s) => s.length>0);
+  if (words.length == 0) return true;
+  else for (let word of words) {
+    if (!taskTags.match(new RegExp(word, 'gi'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkAssignedBy(task) {
+  let words = assignedByFilterInput
+  .val()
+  .split(' ')
+  .filter((s) => s.length>0);
+  if (words.length == 0) return true;
+  else for (let word of words) {
+    if (!getEmail(task.assignedBy, known_associates).match(new RegExp(word, 'gi'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkAssignedTo(task){
+  emails = getEmails(task.assignedTo, known_associates).join(' ')
+  let words = assignedToFilterInput
+  .val()
+  .split(' ')
+  .filter((s) => s.length>0);
+  if (words.length == 0) return true;
+  else for (let word of words) {
+    if (!emails.match(new RegExp(word, 'gi'))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkCompleted(task){
+  if (completedFilterInput.val()=="--") return true;
+  if (completedFilterInput.val()=="Yes") return task.completed;
+  if (completedFilterInput.val()=="No") return !task.completed;
+}
+
+function checkAssignedDate(task) {
+  if (assignedDateTypeSelector.val()=="--") return true;
+  if (assignedDateTypeSelector.val()=="Due On") {
+    return (task.date==assignedDateFilterInput.val());
+  }
+  if (assignedDateTypeSelector.val()=="Due By") {
+    return (task.date<=assignedDateFilterInput.val());
+  }
+  if (assignedDateTypeSelector.val()=="Due After") {
+    return (task.date>=assignedDateFilterInput.val());
+  }
+}
+
+function checkSubtasks(task) {
+  if (hasSubtasksFilterInput.val()=="--") return true;
+  if (hasSubtasksFilterInput.val()=="Yes") {
+    return Boolean(task.subTasks.length>0);
+  }
+  if (hasSubtasksFilterInput.val()=="No") {
+    return !Boolean(task.subTasks.length>0);
+  }
+}
+
+function checkIncludeSubtasks(task) {
+  if (includeSubtasksFilterInput.val()=="--") return true;
+  if (includeSubtasksFilterInput.val()=="Yes") return true;
+  if (includeSubtasksFilterInput.val()=="No") {
+    let subtask_ids = [];
+    tasks.forEach((t) => subtask_ids.push(t.subTasks));
+    subtask_ids = subtask_ids.flat();
+    if (subtask_ids.includes(task._id)) return false;
+  }
+}
+
+function updateTasks(tasks_in) {
+  tasks = tasks_in
+}
+
+
+function filterTasks() {
+  console.log('taskHandler tasks', tasks)
+  filtered_tasks = []
+  for (let task of tasks) {
+    if (checkTitle(task) == false) continue
+    if (checkText(task) == false) continue
+    if (checkTags(task) == false) continue
+    if (checkAssignedBy(task) == false) continue
+    if (checkAssignedTo(task) == false) continue
+    if (checkCompleted(task) == false) continue
+    if (checkAssignedDate(task) == false) continue
+    if (checkSubtasks(task) == false) continue
+    if (checkIncludeSubtasks(task) == false) continue
+    filtered_tasks.push(task);
+  }
+
+  let task_renders = [];
+  let rendered_tasks = [];
+
+  for (let task of tasks) {
+    if (filtered_tasks.includes(task)) {
+      oldTask = lastRenderedTasks.find((t)=>t._id==task._id)
+      
+      // If task was included
+      if (JSON.stringify(oldTask)==JSON.stringify(task)) {
+        task_renders.push(renderTask(task, id, known_associates, tasks, socket, true));
+
+      } else {
+        task_renders.push(renderTask(task, id, known_associates, tasks, socket));
+      }
+      rendered_tasks.push(task);
+
+    }
+  }
+
+  lastRenderedTasks = [...rendered_tasks];
+  $('#task-view').html("");
+  for (let rt of task_renders) {
+    $('#task-view').append(rt);
+  }
+
+  updateKnownAssociates(known_associates, unknown_associates, tasks, socket, id);
+}
 

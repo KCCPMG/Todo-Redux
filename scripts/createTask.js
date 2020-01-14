@@ -142,17 +142,14 @@ function addTaskBox(id, socket, supes, ka, subs){
       ids.push(id);
     }
 
-    $.ajax({
-      url: '/createTask',
-      type: 'POST',
-      data: {
-        title: $("#title").val(),
-        text: text.val(), 
-        tags: tags.val().split(" ").filter((el)=>el.length>0),
-        assignedTo: ids,
-        assignedDue: $("#assignedDue").val(),
-      }    
-    });
+    socket.emit('new-task', {
+      title: $("#title").val(),
+      text: text.val(), 
+      tags: tags.val().split(" ").filter((el)=>el.length>0),
+      assignedTo: ids,
+      assignedDue: $("#assignedDue").val(),
+    })
+
     removeTaskbox();
   })
 

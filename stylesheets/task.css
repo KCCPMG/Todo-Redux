@@ -27,9 +27,11 @@
   border-radius: 10px;
   border: solid black 2px;
   padding: 0px;
+}
+
+.animate-task {
   animation-name: task-container;
   animation-duration: 0.5s;
-
 }
 
 @keyframes task-container {
@@ -100,6 +102,9 @@ h4 {
   width: 100%;
   background-color: rgb(177, 235, 229);
   border-radius: inherit;
+}
+
+.animate-task > .task {
   animation-name: task;
   animation-duration: 1s;
 }

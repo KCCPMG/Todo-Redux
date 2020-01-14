@@ -14,6 +14,7 @@ head
     include ../scripts/taskSocket.js
   script.
 
+
     $('document').ready(function(){
 
       function updateFilteredTasks(ft){
@@ -29,46 +30,40 @@ head
       var self_id = "#{id}";
       var socket = initializeSocket(self_id);
 
+      const rtf = renderTaskFilter(tasks, filtered_tasks, self_id, known_associates, socket);
+      $('#rtf-container').append(rtf);
+
+
       socket.on('task-edit', function(task){
         console.log('\ntaskView.pug - task was edited:', task)
         if (tasks.find((t)=>t._id==task._id)) {
+          let oldTask = tasks.find((t)=>t._id==task._id);
+          if (oldTask.showChildren) task.showChildren=true;
           
           tasks.splice(tasks.indexOf(tasks.find((el) => el._id == task._id)), 1, task);
-          
-          let showChildren = false;
-
-          if (!Boolean(getTaskEl(task._id)[0])) return;
-
-          if ($((getTaskEl(task._id).children('.task').children('.expand-subtasks-control'))).attr('class').match("collapse-subtasks")) {
-            showChildren=true;
-          }
-
-          let renderedTask = renderTask(task, self_id, known_associates, tasks, socket);
-          getTaskEl(task._id).replaceWith(renderedTask);
-          
-
-          if (showChildren==true) {
-            showSubTasks(task, $(renderedTask.children('.task').children('.show-subtasks')), self_id, known_associates, tasks, socket);
-          }
+          updateTasks(tasks);
 
         } else {
+          //- if edited task was NOT previously in tasks
           tasks.push(task);
-          if (task.parentTask){
-            let parentEl = getTaskEl(task.parentTask);
-            if (Boolean(parentEl[0]) && parentEl.children('.task').children('.expand-subtasks-control').attr('class').match('collapse-subtasks')) {
-              parentEl.children('.subtasks-container').append(renderTask(task, self_id, known_associates, tasks, socket))
-            }
-          } else{
-            $('body').append(renderTask(task, self_id, known_associates, tasks, socket));
-          }
+          updateTasks(tasks);
         }
+        filterTasks(); 
       })
 
       socket.on('new-subtask', function(subtask) {
         tasks.push(subtask);
+        updateTasks(tasks);
         let parent = tasks.find((t)=>t._id==subtask.parentTask);
         let parentEl = getTaskEl(parent._id);
       });
+
+      socket.on('new-task', function(task){
+        tasks.push(task);
+        updateTasks(tasks);
+        filterTasks();
+        
+      })
 
       socket.on('delete-task', function(task){
         let check = tasks.length;
@@ -76,11 +71,10 @@ head
         tasks = tasks.filter(function(t){
           return t!=deletedTask;
         })
-        getTaskEl(deletedTask._id).remove();
-      });
+        updateTasks(tasks);
+        filterTasks();
+      });    
 
-
-      $('#rtf-container').append(renderTaskFilter(tasks, filtered_tasks, self_id, known_associates, socket));
     })
 
 body    

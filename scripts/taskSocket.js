@@ -22,6 +22,10 @@ function initializeSocket(id){
     // Stub
   })
 
+  socket.on('new-task', function(task){
+    console.log('taskSocket.js - task was created: ', task);
+  })
+
   return socket;
 }
 

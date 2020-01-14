@@ -296,26 +296,6 @@ router.post('/register',
   res.end();
 });
 
-router.post('/createTask', ensureAuthenticated, function(req, res){
-  let assignedBy = req.user.id;
-
-  let newTask = new Task({
-    title: req.body.title,
-    text: req.body.text,
-    tags: req.body.tags,
-    assignedBy,
-    assignedOn: new Date(),
-    assignedDue: req.body.assignedDue,
-    assignedTo: req.body.assignedTo
-  });
-  newTask.save(function(err){
-    if (err) {
-      console.log(err);
-      res.send(err);
-    }
-    else res.send("New Task " + "'" + req.body.title + "'" + " saved");
-  })
-})
 
 
 module.exports = router;
