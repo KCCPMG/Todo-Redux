@@ -4,6 +4,7 @@ head
     include ../stylesheets/create-task.css
     include ../stylesheets/dashboard.css
     include ../stylesheets/task.css
+    include ../stylesheets/popup-notification.css
   include ./partials/topbar.pug
   include ./partials/message.pug
   script(src='./socket.io/socket.io.js')
@@ -14,7 +15,6 @@ head
     include ../scripts/taskSocket.js
   script.
 
-
     $('document').ready(function(){
 
       function updateFilteredTasks(ft){
@@ -24,15 +24,31 @@ head
       var tasks = !{JSON.stringify(tasks)};
       var filtered_tasks = [];
       var known_associates = !{JSON.stringify(known_associates)};
+      var supes = !{JSON.stringify(subs)};
       var subs = !{JSON.stringify(subs)};
       var tags = [];  
+      var filters = !{JSON.stringify(filters)};
+      var active_filter = !{JSON.stringify(active_filter)};
 
       var self_id = "#{id}";
       var socket = initializeSocket(self_id);
 
-      const rtf = renderTaskFilter(tasks, filtered_tasks, self_id, known_associates, socket);
+      const rtf = renderTaskFilter(tasks, filtered_tasks, self_id, known_associates, socket, filters, active_filter);
       $('#rtf-container').append(rtf);
 
+      socket.on('new-filter-saved', function(filter){
+        filters.push(filter);
+        updateFilters(filters);
+        console.log('new filter:', filter);
+      })
+
+      socket.on('filter-updated', function(filter){
+        let oldFilter = filters.find((f)=>f.name==filter.name)
+        filters.splice(filters.indexOf(oldFilter), 1, filter);
+
+        updateFilters(filters);
+        console.log('edited filter:', filter);
+      })
 
       socket.on('task-edit', function(task){
         console.log('\ntaskView.pug - task was edited:', task)
@@ -61,8 +77,7 @@ head
       socket.on('new-task', function(task){
         tasks.push(task);
         updateTasks(tasks);
-        filterTasks();
-        
+        filterTasks();        
       })
 
       socket.on('delete-task', function(task){
@@ -73,7 +88,11 @@ head
         })
         updateTasks(tasks);
         filterTasks();
-      });    
+      });
+
+      $('.create-task').click(function(){
+        addTaskBox(id, socket, supes, known_associates, subs);
+      });
 
     })
 
@@ -81,7 +100,10 @@ body
 
   +topbar(name, unreadNotifications)
   +message(messages)
-  #rtf-container
+  #control-bar
+    #rtf-container
+    #create-task-container
+      .create-task + Create Task +
   .separation-bar
   #task-view 
 

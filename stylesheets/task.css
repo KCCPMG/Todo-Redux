@@ -1,3 +1,9 @@
+#rtf-container {
+  display: flex;
+  justify-content: space-around;
+  width: 300px;
+}
+
 .filter-options {
   max-width: 300px;
   margin: auto;
@@ -10,6 +16,37 @@
 .task-filter > label {
   display: flex;
   justify-content: space-between;
+}
+
+#control-bar {
+  margin: auto;
+  width: 600px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#create-task-container {
+  width: 300px;
+  display: flex;
+  justify-content: space-around;
+}
+
+.create-task {
+  display: table;
+  margin-top: 19px;
+  background-color: rgb(177, 235, 229);
+  font-size: 1.2em;
+  border-radius: 10px;
+  border: 1px solid black;
+  padding: 4px;
+  line-height: 1.5em;
+  height: 1.5em;
+  width: 145px;
+  text-align: center;
+}
+
+.create-task:hover {
+  cursor: pointer;
 }
 
 .separation-bar {
@@ -132,6 +169,77 @@ h4 {
   margin-bottom: 20px;
 }
 
-.filter-head:hover {
+#filter-head:hover {
   cursor: pointer;
+}
+
+#filter-options-button-row {
+  margin-top: 3px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#filter-options-button-row > button{
+  width: 140px;
+  font-size: 24px;
+  border-radius: 2px;
+  background-color: white;
+  border: 1px solid black;
+}
+
+
+#save-dialog {
+  background-color: rgb(177, 235, 229);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  border-radius: 15px;
+  padding: 5px;
+}
+
+#filter-name-div {
+  width: 100%;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  background-color: white;
+}
+
+#filter-name-div > h2 {
+  margin-top: 0px;
+}
+
+#filter-name-input {
+  font-size: 24px;
+  width: 100%;
+  border: none;
+  text-align: center;
+}
+
+#filter-name-input:focus {
+  outline: none;
+}
+
+#save-dialog-button-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+#save-dialog-button-row > button {
+  width: 49%;
+  font-size: 24px;
+  border-radius: 2px;
+  background-color: white;
+  border: 1px solid black;
+}
+
+#save-dialog-button-row > button:first-child {
+  border-bottom-left-radius: 15px;
+}
+
+#save-dialog-button-row > button:last-child {
+  border-bottom-right-radius: 15px;
 }

@@ -43,6 +43,11 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     required: false,
     default: false
+  },
+  filters:{
+    type: [Object],
+    required: true,
+    default: []
   }
 })
 

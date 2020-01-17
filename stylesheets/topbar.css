@@ -3,21 +3,30 @@ body {
 }
 
 #topbar {
-  min-height: 25px;
+  height: 37px;
   background-color: rgb(177, 235, 229);
   padding: 5px;
   contain: content;
   background-size: auto;
+  width: 100%;
+  position: fixed;
+  top: 0%;
+  overflow: hidden;
+  border-bottom: 0.5px solid white;
 }
 
 .welcome {
+  display: block;
   float: left;
   color: white;
   font-size: 30px;
+  overflow: hidden;
+  max-width: calc(100% - 230px);
 }
 
 #settings-logout-links {
   float: right;
+  padding-right: 5px;
 }
 
 .topbar-link {
@@ -27,5 +36,9 @@ body {
   display: table-cell;
   vertical-align: middle;
   margin-left: 5px;
+}
+
+#spacer {
+  height: 50px;
 }
 

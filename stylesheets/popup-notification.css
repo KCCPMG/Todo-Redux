@@ -1,0 +1,31 @@
+#notification-div {
+  position: fixed;
+  height: auto;
+  top: 50px;
+  right: 20px;
+  width: 210px;
+  position: fixed;
+}
+
+.popup-notification {
+  display: block;
+  margin-bottom: 5px;
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 9px;
+  width: 200px;
+  animation-name: render;
+  animation-duration: 1s;
+  padding: 10px;
+}
+
+@keyframes render {
+  0% {opacity: 0%}
+  100% {opacity: 100%}
+}
+
+.popup-notification:hover {
+  background-color: rgb(215, 248, 245);
+  border-width: 2px;
+  font-weight: bold;
+}

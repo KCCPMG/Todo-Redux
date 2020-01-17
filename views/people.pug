@@ -4,6 +4,7 @@ head
     include ../stylesheets/create-task.css
     include ../stylesheets/people.css
     include ../stylesheets/display-person.css
+    include ../stylesheets/popup-notification.css
   include ./partials/topbar.pug
   include ./partials/message.pug
   link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
@@ -13,7 +14,6 @@ head
     include ../scripts/createTask.js
     include ../scripts/displayPerson.js
     include ../scripts/taskSocket.js
-
     
 
 +topbar(name, unreadNotifications)

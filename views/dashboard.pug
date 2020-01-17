@@ -3,6 +3,7 @@ head
     include ../stylesheets/basic.css
     include ../stylesheets/dashboard.css
     include ../stylesheets/create-task.css
+    include ../stylesheets/popup-notification.css
   include ./partials/topbar.pug
   include ./partials/message.pug
   script(src='./socket.io/socket.io.js')
@@ -13,6 +14,37 @@ head
 
   script.
 
+    function increaseFontSize(par) {
+      currentFontSize = Number(par.css('font-size').replace("px", ""));
+      par.css('font-size', currentFontSize + 1);
+    }
+
+    function decreaseFontSize(par) {
+      currentFontSize = Number(par.css('font-size').replace("px", ""));
+      par.css('font-size', currentFontSize - 1);
+    }
+
+    function adjustHeight(par) {
+      if (par.outerHeight(true) < par.parent()[0].offsetHeight) {
+        increaseFontSize(par);
+      } else if (par.outerHeight(true) > par.parent()[0].offsetHeight) {
+        decreaseFontSize(par);
+      }
+    }
+
+    function autoSetHeight(par, maxed) {
+      if (par.outerHeight(true) < par.parent()[0].offsetHeight) {
+        if (maxed==true) return
+        else {
+          increaseFontSize(par);
+          autoSetHeight(par, false);
+        }
+      } else if (par.outerHeight(true) > par.parent()[0].offsetHeight) {
+        decreaseFontSize(par);
+        autoSetHeight(par, true)
+      }
+    }
+
     $('document').ready(function(){
 
       let id = "#{id}";
@@ -20,7 +52,93 @@ head
       let supes = !{JSON.stringify(supes)};
       let ka = !{JSON.stringify(known_associates)}
       subs = !{JSON.stringify(subs)};
+      filters = (!{JSON.stringify(filters)});
 
+      for (let filter of filters) {
+        let link = $('<a/>',{
+          href: '/filterView?filterID=' + filter.id,
+          id: 'filter-link-' + filter.id
+        })
+
+        linkButton = $('<div/>', {
+          class: 'link-button custom-filter'
+        })
+
+        let closeSign = $('<div/>',{
+          class: 'close-sign'
+        }).html('&#10006')
+        .click(function(e){
+          e.preventDefault();
+          let link = $(this).parent().parent().attr('href');
+          console.log(link);
+          let linkId = link.slice(link.search("=")+1);
+          console.log(linkId);
+          console.log($(this).parent().parent().attr('href'));
+
+          $('body').append($('<div/>', {id: 'sheet'}));
+
+          let warningBox = $('<div/>',{
+            id: 'warning-box',
+          }).append($('<h2/>', {}).text('WARNING!'))
+          .append($('<p/>', {}).text('Deleting a filter CANNOT be undone. Do you want to continue?'));
+
+          let warningBoxButtonRow = $('<div/>', {
+            id: 'warning-box-button-row'
+          });
+
+          warningBoxButtonRow.append($('<button/>', {
+            id: 'confirm-delete-button'
+          }).text('Confirm Delete')
+          .click(function(){
+            warningBox.remove();
+            $('#sheet').remove();
+            socket.emit('delete-filter', {linkId});
+          }));
+
+          warningBoxButtonRow.append($('<button/>', {
+            id: 'cancel-delete-button'
+          }).text('Cancel Delete')
+          .click(function(){
+            warningBox.remove();
+            $('#sheet').remove();
+          }));
+
+          warningBox.append(warningBoxButtonRow);
+          $('body').append(warningBox);
+
+        })
+
+        linkButton.append(closeSign);
+
+        linkRow = $('<p/>', {
+          class: 'par'
+        }).text(filter.name);
+
+        linkButton.append(linkRow);
+        link.append(linkButton);
+        $('#custom-button-section').append(link);      
+      }
+
+      for (let par of $('.par')) {
+        autoSetHeight($(par));
+      }
+
+      setTimeout(function(){
+        for (let par of $('.par')) {
+          autoSetHeight($(par));
+        }
+      }, 100);
+
+      socket.on('filter-deleted', function(filter){
+        let badEl = document.getElementById('filter-link-' + String(filter.id));
+        $(badEl).remove();
+      });
+
+      $(window).on('resize', function(){
+        for (let par of $('.par')) {
+          autoSetHeight($(par));
+        }
+      });
 
       $(".createTask").click(function(){addTaskBox(id, socket, supes, ka, subs)});
     })
@@ -35,13 +153,19 @@ h2 Go To
 div#button-row
   a(href="/tasks")
     div.link-button
-      div.link-row My Tasks
+      //- div.link-row My Tasks
+      p.par My Tasks
   a(href="/assigned")
     div.link-button
-      div.link-row Tasks I've Assigned
+      //- div.link-row Tasks I've Assigned
+      p.par Tasks I've Assigned
   a
     div.link-button.createTask 
-      div.link-row Create Task
+      //- div.link-row Create Task
+      p.par Create Task
   a(href="/people")
     div.link-button 
-      div.link-row People
+      //- div.link-row People
+      p.par People
+#custom-button-section
+  

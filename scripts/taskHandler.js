@@ -7,6 +7,7 @@ var completedFilterInput;
 var assignedDateTypeSelector;
 var hasSubtasksFilterInput;
 var includeSubtasksFilterInput;
+var assignedDateFilterInput;
 
 var tasks;
 var filtered_tasks;
@@ -14,6 +15,7 @@ var id;
 var known_associates;
 var socket;
 var lastRenderedTasks=[];
+var filters = [];
 
 
 function renderTask(task, id, known_associates, tasks, socket, doNotReanimate) {
@@ -68,7 +70,7 @@ function renderTask(task, id, known_associates, tasks, socket, doNotReanimate) {
 
   taskbox.append(($('<p/>', {
     class: "task-completed"
-  }).text("Completed: " + task.completed)))
+  }).text("Completed: " + (task.completed ? "Yes" : "No" ))))
   if (task.completed) taskbox.addClass('completed');
 
   let button_row = $('<div/>', {
@@ -357,21 +359,26 @@ function updateKnownAssociates(known_associates, unknown_associates, tasks, sock
   })
 }
 
-function renderTaskFilter(tasks_in, filtered_tasks_in, id_in, known_associates_in, socket_in){
+function renderTaskFilter(tasks_in, filtered_tasks_in, id_in, known_associates_in, socket_in, filters_in, active_filter_in){
 
   tasks = tasks_in;
   filtered_tasks = filtered_tasks_in;
   id = id_in;
   known_associates = known_associates_in;
   socket = socket_in;
+  filters = filters_in;
+  active_filter = active_filter_in;
 
   let taskFilter = $('<div/>', {
     class: 'filter'
   })
 
+  filterName = (active_filter.name!=undefined) ? '\"' + active_filter.name + '\"': "";
+
   let filterHead = $('<h2/>', {
-    class: 'filter-head'
-  }).html("Filter &#9660").click(function(){
+    id: 'filter-head'
+  }).html("Filter "+filterName+" &#9660")
+  .click(function(){
     showFilter();
   });
 
@@ -496,7 +503,7 @@ function renderTaskFilter(tasks_in, filtered_tasks_in, id_in, known_associates_i
     $('<option/>', {value:"Due After"}).text("Due After")
   );
 
-  let assignedDateFilterInput = $('<input/>', {
+  assignedDateFilterInput = $('<input/>', {
     class: 'task-filter-input',
     type: 'date'
   })
@@ -558,9 +565,116 @@ function renderTaskFilter(tasks_in, filtered_tasks_in, id_in, known_associates_i
 
   filterOptions.append(((includeSubtasksFilter.append((includeSubtasksFilterLabel.append(includeSubtasksFilterInput))))))
 
+  let filterOptionsButtonRow = $('<div/>', {id: 'filter-options-button-row'})
+
+  let clearFilterButton = $('<button/>', {
+    class: 'clear-filter-button'
+  })
+  .text("Clear Filter")
+  .click(function(){
+    applyFilter({});
+  })
+
+  let saveFilterButton = $('<button/>', {
+    class: 'save-filter-button'
+  })
+  .text("Save Filter")
+  .click(function(){
+    $('body').append(($('<div/>', {
+      id: 'sheet',
+    })))
+    let saveDialog =  $('<div/>', {
+      id: 'save-dialog'
+    });
+
+    let filterNameDiv = $('<div/>', {
+      id: 'filter-name-div'
+    })
+
+    let filterDivHeader = $('<h2/>', {}).text("Filter Name")
+    filterNameDiv.append(filterDivHeader)
+
+    let filterNameInput = $('<input/>', {
+      id: 'filter-name-input',
+      placeholder: 'filter name'
+    });
+    filterNameDiv.append(filterNameInput);
+
+    saveDialog.append(filterNameDiv);
+
+    let saveDialogButtonRow = $('<div/>', {
+      id: 'save-dialog-button-row'
+    })
+
+    let confirmFilterSave = $('<button/>', {
+      id: 'confirm-filter-save-button'
+    }).text('Save Filter')
+    .click(function(){
+      let name = filterNameInput.val();
+      if (name.replace(/\ /g, '').length==0) {
+        filterDivHeader.text("You need to have at least one non-space character");
+      } else if (filters.find((f)=>f.name==name.trim())) {
+        
+        let warningBox = $('<div/>',{
+          id: 'warning-box',
+        }).append($('<h2/>', {}).text('WARNING'))
+        .append($('<p/>', {}).text('You already have a task filter with this name, and saving this as is will overwrite the previous filter. Do you want to continue?'));
+
+        let warningBoxButtonRow = $('<div/>', {
+          id: 'warning-box-button-row'
+        });
+
+        warningBoxButtonRow.append($('<button/>', {
+          id: 'confirm-overwrite-button'
+        }).text('Confirm Overwrite')
+        .click(function(){
+
+          warningBox.remove();
+          saveDialog.remove();
+          $('#sheet').remove();
+          saveFilter(name, true);
+        }));
+
+        warningBoxButtonRow.append($('<button/>', {
+          id: 'cancel-overwrite-button'
+        }).text('Cancel Overwrite')
+        .click(function(){
+          warningBox.remove();
+        }));
+
+        warningBox.append(warningBoxButtonRow);
+        $('body').append(warningBox)
+
+      } else {
+        saveFilter(name);
+        saveDialog.remove();
+        $('#sheet').remove();
+      }
+    });
+
+    let cancelFilterSave = $('<button/>', {
+      id: 'cancel-filter-save-button'
+    }).text('Cancel Save')
+    .click(function(){
+      saveDialog.remove();
+      $('#sheet').remove();
+    });
+
+    saveDialogButtonRow.append(confirmFilterSave);
+    saveDialogButtonRow.append(cancelFilterSave);
+    saveDialog.append(saveDialogButtonRow);
+
+    $('body').append(saveDialog);
+  })
+
+  filterOptionsButtonRow.append(saveFilterButton);
+  filterOptionsButtonRow.append(clearFilterButton); 
+  
+  filterOptions.append(filterOptionsButtonRow);
+
   function showFilter(){
     filterOptions.show();
-    filterHead.html("Filter &#9650")
+    filterHead.html("Filter " + filterName + " &#9650")
     filterHead.click(function(){
       collapseFilter();
     })
@@ -568,13 +682,14 @@ function renderTaskFilter(tasks_in, filtered_tasks_in, id_in, known_associates_i
 
   function collapseFilter(){
     filterOptions.hide();
-    filterHead.html("Filter &#9660")
+    filterHead.html("Filter " + filterName + " &#9660")
     filterHead.click(function(){
       showFilter();
     })
   }
 
-  filterTasks();
+  applyFilter(active_filter);
+  // filterTasks();
   return taskFilter;
 }
 
@@ -749,9 +864,12 @@ function updateTasks(tasks_in) {
   tasks = tasks_in
 }
 
+function updateFilters(filters_in) {
+  filters = filters_in;
+}
+
 
 function filterTasks() {
-  console.log('taskHandler tasks', tasks)
   filtered_tasks = []
   for (let task of tasks) {
     if (checkTitle(task) == false) continue
@@ -790,7 +908,73 @@ function filterTasks() {
   for (let rt of task_renders) {
     $('#task-view').append(rt);
   }
+  if (task_renders.length==0) $('#task-view').append('No tasks found');
 
   updateKnownAssociates(known_associates, unknown_associates, tasks, socket, id);
 }
 
+
+function applyFilter(filterObj) {
+  if (filterObj.title) {
+    titleFilterInput.val(filterObj.title)
+  } else titleFilterInput.val("");
+
+  if (filterObj.text) {
+    textFilterInput.val(filterObj.text)
+  } else textFilterInput.val("")
+
+  if (filterObj.tags) {
+    tagFilterInput.val(filterObj.tags)
+  } else tagFilterInput.val("")
+  
+  if (filterObj.assignedBy) {
+    assignedByFilterInput.val(filterObj.assignedBy)
+  } else assignedByFilterInput.val("")
+  
+  if (filterObj.assignedTo) {
+    assignedToFilterInput.val(filterObj.assignedTo)
+  } else assignedToFilterInput.val("")
+  
+  if (filterObj.completed) {
+    completedFilterInput.val(filterObj.completed)
+  } else completedFilterInput.val("")
+  
+  if (filterObj.dateType) {
+    assignedDateTypeSelector.val(filterObj.dateType)
+  } else assignedDateTypeSelector.val("--")
+  
+  if (filterObj.date) {
+    assignedDateFilterInput.val(filterObj.date)
+  } else assignedDateFilterInput.val("")
+  
+  if (filterObj.hasSubtasks) {
+    hasSubtasksFilterInput.val(filterObj.hasSubtasks)
+  } else hasSubtasksFilterInput.val("--")
+  
+  if (filterObj.includeSubtasks) {
+    includeSubtasksFilterInput.val(filterObj.includeSubtasks)
+  } else includeSubtasksFilterInput.val("No")
+  
+  filterTasks();
+}
+
+
+function saveFilter(name, edit) {
+  let filterObj = {};
+
+  filterObj.name = name;
+  filterObj.title = titleFilterInput.val();
+  filterObj.text = textFilterInput.val();
+  filterObj.tags = tagFilterInput.val();
+  filterObj.assignedBy = assignedByFilterInput.val();
+  filterObj.assignedTo = assignedToFilterInput.val();
+  filterObj.completed = completedFilterInput.val();
+  filterObj.dateType = assignedDateTypeSelector.val();
+  filterObj.date = assignedDateFilterInput.val();
+  filterObj.hasSubtasks = hasSubtasksFilterInput.val();
+  filterObj.includeSubtasks = includeSubtasksFilterInput.val();
+  filterObj.clickScore = 0;
+
+  if (edit) socket.emit('edit-filter', filterObj);
+  else socket.emit('new-filter', filterObj);
+}

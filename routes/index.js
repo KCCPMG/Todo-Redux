@@ -30,7 +30,8 @@ router.get('/dashboard', ensureAuthenticated, refreshLocals, function(req, res) 
     known_associates: req.session.known_associates,
     tasks_assigned: req.session.tasks_assigned,
     user_tasks : req.session.user_tasks,
-    unreadNotifications: Boolean(req.user.unreadNotifications)
+    unreadNotifications: Boolean(req.user.unreadNotifications),
+    filters: req.user.filters
   });
 });
 
@@ -48,7 +49,9 @@ router.get('/tasks', ensureAuthenticated, refreshLocals, function(req, res){
         supes: req.session.supes,
         tasks: req.session.user_tasks,
         known_associates: req.session.known_associates,
-        unreadNotifications: Boolean(req.user.unreadNotifications)
+        unreadNotifications: Boolean(req.user.unreadNotifications),
+        filters: req.user.filters,
+        active_filter: {}
       });
     }
   })
@@ -68,7 +71,9 @@ router.get('/assigned', ensureAuthenticated, refreshLocals, function(req, res){
         supes: req.session.supes,
         tasks: req.session.tasks_assigned,
         known_associates: req.session.known_associates,
-        unreadNotifications: Boolean(req.user.unreadNotifications)
+        unreadNotifications: Boolean(req.user.unreadNotifications),
+        filters: req.user.filters,
+        active_filter: {}
       });
     }
   })
@@ -76,38 +81,68 @@ router.get('/assigned', ensureAuthenticated, refreshLocals, function(req, res){
 
 router.get('/task', ensureAuthenticated, refreshLocals, function(req, res){
   let taskID = req.query.taskID.replace(/\"/g, '');
-  Task.findById(taskID, function(err, task){
+
+  Task.find({$or: [{assignedBy:req.user._id}, {assignedTo:req.user._id}]}, function(err, tasks){
     if (err) console.log(err);
-    if (task == null) {
-      req.session.messages = ["This task does not exist"]
-      res.render('singleTaskView', {
+    else {
+      let soughtTask = tasks.find((t)=>t._id == taskID);
+      let tasksToSend = [];
+      if (soughtTask) {
+        tasksToSend.push(soughtTask);
+
+        if (soughtTask.subTasks) {
+          let children = [...soughtTask.subTasks];
+
+          while (children.length>0) {
+            let child = children.pop();
+            let childTask = tasks.find((t)=>t._id == String(child));
+            if (childTask) {
+              tasksToSend.push(childTask);
+              children.push(...childTask.subTasks)
+            }    
+          }
+        }
+      }
+      res.render('taskView', {
         name: req.user.name,
         messages: req.session.messages,
         id: req.user.id,
-        task: null,
-        unreadNotifications: Boolean(req.user.unreadNotifications)
-      });
-    } else if (task.assignedBy!=req.user.id && !task.assignedTo.includes(req.user.id)) {
-      req.session.messages = ["You do not have access to this task"]
-      res.render('singleTaskView', {
-        name: req.user.name,
-        messages: req.session.messages,
-        id: req.user.id,
-        task: null,
-        unreadNotifications: Boolean(req.user.unreadNotifications)
-      });
-    } else {
-      req.session.messages = [];
-      res.render('singleTaskView', {
-        name: req.user.name,
-        messages: req.session.messages,
-        id: req.user.id,
-        tasks: [task],
+        subs: req.session.subs,
+        supes: req.session.supes,
+        tasks: tasksToSend,
         known_associates: req.session.known_associates,
-        unreadNotifications: Boolean(req.user.unreadNotifications)
-      });
+        unreadNotifications: Boolean(req.user.unreadNotifications),
+        filters: req.user.filters,
+        active_filter: {}
+      })
     }
   })
+})
+
+
+router.get('/filterView', ensureAuthenticated, refreshLocals, function(req, res){
+  let filterID = req.query.filterID;
+  Task.find({$or: [{assignedBy: req.user._id}, {assignedTo: req.user._id}]}, function(err, tasks) {
+    if (err) console.log(err);
+    else {
+      let filterObj = req.user.filters.find((f)=>f.id==filterID);
+      if (!filterObj) filterObj = {};
+
+      res.render('taskView',  {
+        name: req.user.name,
+        messages: req.session.messages,
+        id: req.user.id,
+        subs: req.session.subs,
+        supes: req.session.supes,
+        tasks: tasks,
+        known_associates: req.session.known_associates,
+        unreadNotifications: Boolean(req.user.unreadNotifications),
+        filters: req.user.filters,
+        active_filter: filterObj
+      })
+    }
+  })
+
 })
 
 

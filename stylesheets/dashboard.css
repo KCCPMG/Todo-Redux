@@ -1,24 +1,53 @@
 #button-row {
   margin-top: 20vh;
-  display: block;
+  /* display: block; */
   width: 80%;
   margin: auto;
+  display: inline-block;
+}
+
+a {
+  /* display: inline-block; */
+  text-decoration: none;
+  /* height: 14vw; */
 }
 
 .link-button {
-  margin: auto;
+  display: inline-block;
+  background-color: white;
+  /* margin-top: 15px; */
+  /* margin: auto; */
+  margin-top: 2vw;
   margin-left: 2vw;
   margin-right: 2vw;
-  height: 15vw;
-  width: 15vw;
-  display: inline-block;
+  height: 14vw;
+  width: 14vw;
   border-radius: 15px;
-  border-color: rgb(3, 145, 180);
-  border-style: solid;
-  border-width: 4px;
+  border: 4px solid rgb(3, 145, 180);
+  padding-left: 2px;
+  padding-right: 2px;
+  top: 0;
+  contain: content;
 }
 
-.link-row {
+.link-button:hover {
+  cursor: pointer;
+}
+
+.link-button:hover > .close-sign {
+  visibility: visible;
+}
+
+.close-sign {
+  position: fixed;
+  top: 0.5vw;
+  right: 0.5vw;
+  visibility: hidden;
+  color: black;
+}
+
+/* .link-row {
+  margin-top: 15px;
   display: inline-block; 
   position: relative;
   top: 3vw;
@@ -27,12 +56,26 @@
   text-align: center;
   color: black;
   vertical-align: middle;
+} */
+
+.par {
+  top: 0;
+  position: relative;
+  color: black;
+  text-decoration: none;
+  word-break: break-word;
 }
 
 .createTask:hover {
   cursor: pointer;
 }
 
-.link-button > p {
+/* .link-button > p {
   height: 100%;
+} */
+
+#custom-button-section {
+  padding-top: 15px;
+  border-top: 3px solid rgb(3, 145, 180);
+  margin-top: 15px;
 }

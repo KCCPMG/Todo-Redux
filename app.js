@@ -110,6 +110,57 @@ io.on('connection', function(socket) {
     })
   })
 
+  socket.on('new-filter', function(filter){
+    User.findById(userId, function(err, user){
+      if (err) console.log(err);
+      else {
+        let ids = [];
+        user.filters.forEach((f)=>ids.push(Number(f.id)));
+        if (ids.length==0) filter.id="0";
+        else filter.id = String(Math.max(...ids) + 1);
+        user.filters.push(filter);
+        user.save(function(err){
+          if (err) console.log(err);
+          else notifyUser(userId, 'new-filter-saved', filter);
+        })  
+      }
+    })
+  })
+
+  socket.on('edit-filter', function(filter){
+    User.findById(userId, function(err, user){
+      if (err) console.log(err);
+      else {
+        oldObj = user.filters.find((f)=>f.name==filter.name);
+        console.log("filter:",filter);
+        console.log("oldObj:",oldObj);
+        let newObj = Object.assign({}, oldObj, filter);
+        console.log("newObj after assign:",newObj);
+        user.filters.splice(user.filters.indexOf(oldObj), 1, newObj);
+        user.save(function(err){
+          if (err) console.log(err);
+          else notifyUser(userId, 'filter-updated', filter);
+        }) 
+      }
+    })
+  })
+
+  socket.on('delete-filter', function(filter){
+    User.findById(userId, function(err, user){
+      if (err) console.log(err);
+      else {
+        let remove = user.filters.find((f)=>f.id==filter.linkId);
+        user.filters.splice(user.filters.indexOf(remove), 1);
+        user.save(function(err){
+          if (err) console.log(err);
+          else {
+            notifyUser(userId, 'filter-deleted', remove);
+          }
+        })
+      }
+    })
+  })
+
   socket.on('new-task', function(data){
     let assigner = userId;
     let newTask = new Task({

@@ -1,3 +1,16 @@
+1-17-20 Commit:
+
+-Modified topbar.pug and topbar.css to keep topbar visible at all times without impacting view of other elements
+-Modified index.js /task route for a specific task to show that task and all of its subTasks that the user has access to. If the user does not have access to the parent task, an empty array of tasks is sent in the render.
+-Modified taskSocket.js to be able to display popup notifications below the topbar.
+-Modified User.js to include filters, app.js to include socket events for new and edited filters, taskView.pug to handle filter changes on socket events and render active filter to taskHandler.js which was modified to include filter functionality. Index.js was also modified to dynamically render saved user filters.
+-Made changes to dashboard.pug and dashboard.css to correctly display all buttons, including automatically adjusting font-size to stay within button boundaries.
+-Added Create Task button to taskView page.
+-Created autocomplete.js, but this is a work in progress that will ultimately be used for textarea and input tags.
+
+
+
+
 1-14-20 Commit:
 
 -Modified createTask.js and app.js to change task creation to a socket event instead of an ajax POST to /createTask route in index.js. 
